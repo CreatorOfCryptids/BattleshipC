@@ -1,9 +1,11 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
-#define MAP_SIZE 10
-#define TOTAL_HITS 17
+#include "printing.h"
+#include "constants.h"
+
+
 
 /**
  * The init_empty_map() method.
@@ -14,59 +16,91 @@ void init_empty_map(char map[MAP_SIZE][MAP_SIZE]){
     for(int x=0; x<MAP_SIZE; x++) 
         for(int y =0; y<MAP_SIZE; y++)
             map[x][y] = ' ';
-
 }
 
-/**
- * The print_map() method.
- * @param map a 2D array to be printed as a battleship map.
-*/
-void print_map(char map[MAP_SIZE][MAP_SIZE]){
-
-    char collumns[MAP_SIZE];
-    char first_collumn = 'A';
-    for(int i =0; i<MAP_SIZE; i++)
-        collumns[i] = first_collumn+i;
-
-    for(int i = 0; i<MAP_SIZE+1; i++)
-        printf("+———");
+void singleplayer(int *inputs_[2], int *outputs_[2]){
+    int inputs[2] = *inputs_;
+    int outputs[2] = *outputs_;
     
-    printf("+\n");
-
-    // Print collumn lable
-    printf("|   ");
-
-    for(int i=0; i<MAP_SIZE; i++)
-        printf("| %c ", collumns[i]);
+    srand(time(NULL));
     
-    printf("|\n");
+    // Generate random map.
 
+    while(){
+        // Pipe random coordinates until a hit.
 
-    // Print each row with a row number on the leftmost side.
-    for(int x = 0; x<MAP_SIZE; x++){
-
-        for(int i = 0; i<MAP_SIZE+1; i++)
-            printf("+———");
-
-        printf("+\n");
-
-        printf("|%2d ", x+1);
-
-        for(int y = 0; y<MAP_SIZE; y++)
-            printf("| %c ", map[x][y]);
-
-        printf("|\n");
     }
     
-    for(int i = 0; i<MAP_SIZE+1; i++)
-        printf("+———");
+
+    exit(0);
+}
+
+void multiplayer(int *inputs_[2], int *outputs_[2]){
+    int inputs[2] = *inputs_;
+    int outputs[2] = *outputs_;
+
+    // Networking bs
+
     
-    printf("+\n");
+
+    exit(0);
+}
+
+void init_singleplayer(pid_t *pid, int *inputs[2], int *outputs[2]){
+    pid_t child;
+    if ((child = fork()) == 0){
+        singleplayer(inputs, outputs);
+    }
+    else if (child == -1){
+        perror("There was an issue forking the singleplayer process");
+        exit(1);
+    }
+    else{
+        *pid = child;
+    }
+}
+
+void init_multiplayer(pid_t *pid, int *inputs[2], int *outputs[2]){
+    pid_t child;
+    if ((child = fork()) == 0){
+        multiplayer(inputs, outputs);
+    }
+    else if (child == -1){
+        perror("There was an issue forking the multiplayer process");
+        exit(1);
+    }
+    else{
+        *pid = child;
+    }
 }
 
 int main(){
-    // Init 2 10x10 2D char arrays all filled with ' '.
 
+    //Print title and menu
+    print_menu();
+    unsigned char choice = 0;
+    pid_t oponent_process = 0;
+    int inputs[2];      // Information coming from the chosen oponent
+    int outputs[2];     // Information going to the chosen oponent
+
+    while(choice <= 3 && choice !=0){
+        scanf("%c\n", choice);
+
+        if (choice == 1)        // If singleplayer, fork a process to play battlship with rand.
+            init_singleplayer(&oponent_process, &inputs, &outputs);
+        else if(choice == 2)    // If multiplayer, fork a process to establish network connection and handle other player input.
+            init_multiplayer(&oponent_process, &inputs, &outputs);
+        else if (choice == 3)
+            settings_menu();
+        else if(choice == 4)
+            print_instructions();
+        else if(choice == 5)
+            return 0;
+        else
+            printf("The symbol '%c' is not a valid choice, please choose another selection", choice);
+    }
+
+    // Init 2 10x10 2D char arrays all filled with ' '.
     char player_map[MAP_SIZE][MAP_SIZE];
     char op_map[MAP_SIZE][MAP_SIZE];
     int op_hits = 0;        // Amount of hits AGAINST the oponent
@@ -74,23 +108,20 @@ int main(){
 
     init_empty_map(player_map);
     init_empty_map(op_map);
-
-    /*
-    printf("Testing printing the player map: \n");
-    print_map(player_map);
-    printf("\nTesting printing the oponent's map:\n");
-    print_map(op_map);
-    /**/
-
-    // Ask if singleplayer or multiplayer.
-    // If multiplayer, fork a process to establish network connection and handle other player input.
-
-    // Otherwize fork a process to play battlship with rand.
+    
+    // Init game
+    int carrier = CAR_SIZE;
+    int battleship = BAT_SIZE;
+    int destroyer = DES_SIZE;
+    int submarine = SUB_SIZE;
+    int patrol_boat = PAT_SIZE;
 
     // While both players have an unsunk battleship, let them hit back and forth.
     while(op_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
         
     }
+
+    wait(oponent_process);
 
     return 1;
 }
