@@ -63,12 +63,29 @@ void print_menu(){
     printf("  (3) Settings\n");
     printf("  (3) How to play\n");
     printf("  (4) Quit\n");
-    printf("\nChoice: ");
 }
 
 /**
  * Prints the instructions of the game.
 */
 void print_instructions(){
+    printf("Havent written them yet, sorry.");
+}
 
+void print_settings_menu(){
+    printf("Not implemented yet, sorry.");
+}
+
+void print_networking_options(){
+    printf("Networking options: \n");
+    printf("  (1) Host Server");
+    printf("  (2) Connect to server");
+    printf("  (3) Return to menu");
+}
+
+char get_selection(){
+    char *choice = 0;
+    printf("\nChoice: ");
+    scanf("%c\n", choice);
+    return *choice;
 }
