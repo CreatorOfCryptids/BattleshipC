@@ -51,9 +51,6 @@ void singleplayer(int inputs[2], int outputs[2]){
     char cpu_ships_map[MAP_SIZE][MAP_SIZE]; // Map containing CPU's ships
     char cpu_hit_map[MAP_SIZE][MAP_SIZE];   // Map containing coordinaties the CPU has attacked.
 
-    int op_hits = 0;        // Amount of hits AGAINST the oponent
-    int player_hits = 0;    // Amount of hits AGAINST the player
-
     init_empty_map(cpu_ships_map);
     init_empty_map(cpu_hit_map);
     
@@ -61,7 +58,7 @@ void singleplayer(int inputs[2], int outputs[2]){
 
     // place carrier
     int x,y,orientation;
-    if (orientation = rand() % 2){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
+    if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
         // Vertical
         x = rand() % MAP_SIZE;
         y = rand() % MAP_SIZE - CAR_SIZE;
@@ -75,7 +72,7 @@ void singleplayer(int inputs[2], int outputs[2]){
 
     // place battleship
     do{
-        if (orientation = rand() % 2){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
+        if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
             // Vertical
             x = rand() % MAP_SIZE;
             y = rand() % MAP_SIZE - BAT_SIZE;
@@ -89,7 +86,7 @@ void singleplayer(int inputs[2], int outputs[2]){
 
     // place destroyer
     do{
-        if (orientation = rand() % 2){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
+        if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
             // Vertical
             x = rand() % MAP_SIZE;
             y = rand() % MAP_SIZE - DES_SIZE;
@@ -103,7 +100,7 @@ void singleplayer(int inputs[2], int outputs[2]){
 
     // place sub
     do{
-        if (orientation = rand() % 2){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
+        if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
             // Vertical
             x = rand() % MAP_SIZE;
             y = rand() % MAP_SIZE - SUB_SIZE;
@@ -117,7 +114,7 @@ void singleplayer(int inputs[2], int outputs[2]){
 
     // place patrol boat
     do{
-        if (orientation = rand() % 2){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
+        if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
             // Vertical
             x = rand() % MAP_SIZE;
             y = rand() % MAP_SIZE - PAT_SIZE;
@@ -129,17 +126,23 @@ void singleplayer(int inputs[2], int outputs[2]){
     }
     while(place_ship(&cpu_ships_map, x, y, orientation, PAT_SIZE, 'P'));
 
+    print_map(cpu_ships_map);
+    exit(0);
+
     int carrier = CAR_SIZE;
     int battleship = BAT_SIZE;
     int destroyer = DES_SIZE;
     int submarine = SUB_SIZE;
     int patrol_boat = PAT_SIZE;
 
+    int cpu_hits = 0;        // Amount of hits AGAINST the oponent
+    int player_hits = 0;    // Amount of hits AGAINST the player
+
     write(inputs[1], "R", 1);   // Send message to parent to let it continue.
 
-    while(1){
+    while(cpu_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
         // Pipe random coordinates until a hit.
-        
+
     }
     
 
