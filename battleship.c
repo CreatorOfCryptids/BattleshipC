@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <signal.h>
 
 #include "printing.h"
 #include "constants.h"
@@ -20,9 +21,9 @@ void init_empty_map(char map[MAP_SIZE][MAP_SIZE]){
             map[x][y] = ' ';
 }
 
-int place_ship(char *map[MAP_SIZE][MAP_SIZE], int x, int y, int orientation, int length, char value){
+int place_ship(char map[1][MAP_SIZE][MAP_SIZE], int x, int y, int orientation, int length, char value){
     
-    if(orientation){
+    if(orientation){// Vertical
         for(int i =0; i<length; i++)
             if (*map[x][y-i] != ' ')
                 return -1;
@@ -30,7 +31,7 @@ int place_ship(char *map[MAP_SIZE][MAP_SIZE], int x, int y, int orientation, int
         for(int i = 0; i<length; i++)
             *map[x][y-i] = 'C';
     }
-    else{
+    else{           // Horizontal
         for(int i =0; i<length; i++)
             if (*map[x-i][y] != ' ')
                 return -1;
@@ -42,7 +43,23 @@ int place_ship(char *map[MAP_SIZE][MAP_SIZE], int x, int y, int orientation, int
     return 0;
 }
 
+void rand_ship_coord(int *x, int *y, int *orientation, int ship_length){
+
+    *orientation = rand() % 2; // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
+
+    if (*orientation){  // Vertical
+        *x = rand() % MAP_SIZE;
+        *y = rand() % MAP_SIZE - CAR_SIZE;
+    }
+    else{               // Horizontal
+        *x = rand() % MAP_SIZE - CAR_SIZE;
+        *y = rand() % MAP_SIZE;
+    }
+}
+
 void singleplayer(int inputs[2], int outputs[2]){
+
+    int log = 0;
     
     srand(time(NULL));
     
@@ -58,73 +75,35 @@ void singleplayer(int inputs[2], int outputs[2]){
 
     // place carrier
     int x,y,orientation;
-    if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
-        // Vertical
-        x = rand() % MAP_SIZE;
-        y = rand() % MAP_SIZE - CAR_SIZE;
-    }
-    else{   // Horizontal
-        x = rand() % MAP_SIZE - CAR_SIZE;
-        y = rand() % MAP_SIZE;
-    }
 
+
+    rand_ship_coord(&x, &y, &orientation, CAR_SIZE);
     place_ship(&cpu_ships_map, x, y, orientation, CAR_SIZE, 'C'); 
+
 
     // place battleship
     do{
-        if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
-            // Vertical
-            x = rand() % MAP_SIZE;
-            y = rand() % MAP_SIZE - BAT_SIZE;
-        }
-        else{   // Horizontal
-            x = rand() % MAP_SIZE - BAT_SIZE;
-            y = rand() % MAP_SIZE;
-        }
+        rand_ship_coord(&x, &y, &orientation, BAT_SIZE);
     }
-    while(place_ship(&cpu_ships_map, x, y, orientation, BAT_SIZE, 'B'));
+    while(place_ship(&cpu_ships_map, x, y, orientation, BAT_SIZE, 'B') != -1);
 
     // place destroyer
     do{
-        if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
-            // Vertical
-            x = rand() % MAP_SIZE;
-            y = rand() % MAP_SIZE - DES_SIZE;
-        }
-        else{   // Horizontal
-            x = rand() % MAP_SIZE - DES_SIZE;
-            y = rand() % MAP_SIZE;
-        }
+        rand_ship_coord(&x, &y, &orientation, DES_SIZE);
     }
-    while(place_ship(&cpu_ships_map, x, y, orientation, DES_SIZE, 'D'));
+    while(place_ship(&cpu_ships_map, x, y, orientation, DES_SIZE, 'D') != -1);
 
     // place sub
     do{
-        if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
-            // Vertical
-            x = rand() % MAP_SIZE;
-            y = rand() % MAP_SIZE - SUB_SIZE;
-        }
-        else{   // Horizontal
-            x = rand() % MAP_SIZE - SUB_SIZE;
-            y = rand() % MAP_SIZE;
-        }
+        rand_ship_coord(&x, &y, &orientation, SUB_SIZE);
     }
-    while(place_ship(&cpu_ships_map, x, y, orientation, SUB_SIZE, 'S'));
+    while(place_ship(&cpu_ships_map, x, y, orientation, SUB_SIZE, 'S') != -1);
 
     // place patrol boat
     do{
-        if ((orientation = rand() % 2)){    // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
-            // Vertical
-            x = rand() % MAP_SIZE;
-            y = rand() % MAP_SIZE - PAT_SIZE;
-        }
-        else{   // Horizontal
-            x = rand() % MAP_SIZE - PAT_SIZE;
-            y = rand() % MAP_SIZE;
-        }
+        rand_ship_coord(&x, &y, &orientation, PAT_SIZE);
     }
-    while(place_ship(&cpu_ships_map, x, y, orientation, PAT_SIZE, 'P'));
+    while(place_ship(&cpu_ships_map, x, y, orientation, PAT_SIZE, 'P') != -1);
 
     print_map(cpu_ships_map);
     exit(0);
@@ -213,7 +192,7 @@ void init_multiplayer(pid_t *pid, int inputs[2], int outputs[2], char connection
 
 int main(){
 
-    unsigned char choice = 0;
+    unsigned int choice = 0;
     pid_t oponent_process = 0;
     int inputs[2];      // Information coming from the chosen oponent
     int outputs[2];     // Information going to the chosen oponent
@@ -228,19 +207,19 @@ int main(){
         exit(1);
     }
 
-    while(choice <= 3 && choice !=0){
+    do{
         //Print title and menu
         print_menu();
 
-        if ((choice = get_selection()) == '1')   // If singleplayer, fork a process to play battlship with rand.
+        if ((choice = get_selection()) == 1)   // If singleplayer, fork a process to play battlship with rand.
             init_singleplayer(&oponent_process, inputs, outputs);
         else if(choice == '2'){   // If multiplayer, ask if user wants to host or connect.
 
             print_networking_options();
 
-            if ((choice = get_selection()) == '1')   // User wants to host
+            if ((choice = get_selection()) == 1)   // User wants to host
                 init_multiplayer(&oponent_process, inputs, outputs, 0);
-            else if(choice == '2')                    // User wants to connect.
+            else if(choice == 2)                    // User wants to connect.
                 init_multiplayer(&oponent_process, inputs, outputs, 1);
             else{                                    // Other
                 choice = 0; // Set to 0, so the while loop keeps working.
@@ -253,15 +232,15 @@ int main(){
             if (*output == -1)  // Quit if we recive an error message.
                 exit(1);
         }
-        else if (choice == '3')
+        else if (choice == 3)
             print_settings_menu();
-        else if(choice == '4')
+        else if(choice == 4)
             print_instructions();
-        else if(choice == '5')
+        else if(choice == 5)
             return 0;
         else
-            printf("The symbol '%c' is not a valid choice, please choose another selection", choice);
-    }
+            printf("The symbol '%d' is not a valid choice, please choose another selection", choice);
+    }while(choice > 2);
 
     // Init 2 10x10 2D char arrays all filled with ' '.
     char player_map[MAP_SIZE][MAP_SIZE];
@@ -280,14 +259,14 @@ int main(){
     int submarine = SUB_SIZE;
     int patrol_boat = PAT_SIZE;
 
-
+    // Get player input
 
     // While both players have an unsunk battleship, let them hit back and forth.
     while(op_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
         
     }
 
-    kill(oponent_process);
+    kill(oponent_process, SIGKILL);
 
     return 1;
 }

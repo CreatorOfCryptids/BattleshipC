@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "constants.h"
 
 /**
@@ -69,23 +70,27 @@ void print_menu(){
  * Prints the instructions of the game.
 */
 void print_instructions(){
-    printf("Havent written them yet, sorry.");
+    printf("Havent written them yet, sorry.\n");
 }
 
 void print_settings_menu(){
-    printf("Not implemented yet, sorry.");
+    printf("Not implemented yet, sorry.\n");
 }
 
 void print_networking_options(){
     printf("Networking options: \n");
-    printf("  (1) Host Server");
-    printf("  (2) Connect to server");
-    printf("  (3) Return to menu");
+    printf("  (1) Host Server\n");
+    printf("  (2) Connect to server\n");
+    printf("  (3) Return to menu\n");
 }
 
-char get_selection(){
-    char *choice = 0;
+int get_selection(){
+    unsigned int choice;
     printf("\nChoice: ");
-    scanf("%c\n", choice);
-    return *choice;
+    scanf("%d", &choice);
+    return choice;
+}
+
+int log(char *message){
+    printf(message);
 }
