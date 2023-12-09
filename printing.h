@@ -90,7 +90,3 @@ int get_selection(){
     scanf("%d", &choice);
     return choice;
 }
-
-int log(char *message){
-    printf(message);
-}

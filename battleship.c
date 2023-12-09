@@ -11,33 +11,41 @@
 
 
 /**
- * The init_empty_map() method.
- * @return a 2D char array with each value set to ' '.
-*/
+ * @param map The map to be initilized as a 2D char array with each value set to ' '.
+ */
 void init_empty_map(char map[MAP_SIZE][MAP_SIZE]){
-
     for(int x=0; x<MAP_SIZE; x++) 
         for(int y =0; y<MAP_SIZE; y++)
             map[x][y] = ' ';
 }
 
-int place_ship(char map[1][MAP_SIZE][MAP_SIZE], int x, int y, int orientation, int length, char value){
+/**
+ * Places a ship into a map with the desiered coordinates and orientation.
+ * 
+ * @param map A pointer to a 2D square array of size MAP_SIZE
+ * @param x The starting x coordinate of the ship to be added to the map
+ * @param y The starting y coordinate of the ship to be added to the map
+ * @param orientation The orientation of the ship, with 1 being vertical and 2 being horizontal
+ * @param ship_type The type of ship being added
+ * 
+*/
+int place_ship(char map[1][MAP_SIZE][MAP_SIZE], int x, int y, int orientation, int length, char ship_type){
     
     if(orientation){// Vertical
-        for(int i =0; i<length; i++)
-            if (*map[x][y-i] != ' ')
+        for(int i = 0; i<length; i++)
+            if (map[0][x][y+i] != ' ')
                 return -1;
         
         for(int i = 0; i<length; i++)
-            *map[x][y-i] = 'C';
+            map[0][x][y+i] = ship_type;
     }
     else{           // Horizontal
-        for(int i =0; i<length; i++)
-            if (*map[x-i][y] != ' ')
+        for(int i = 0; i<length; i++)
+            if (map[0][x+i][y] != ' ')
                 return -1;
         
         for(int i = 0; i<length; i++)
-            *map[x-i][y] = 'C';
+            map[0][x+i][y] = ship_type;
     }
     
     return 0;
@@ -48,12 +56,16 @@ void rand_ship_coord(int *x, int *y, int *orientation, int ship_length){
     *orientation = rand() % 2; // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
 
     if (*orientation){  // Vertical
-        *x = rand() % MAP_SIZE;
-        *y = rand() % MAP_SIZE - CAR_SIZE;
+        if((*x = rand() % MAP_SIZE) < 0)
+            *x = *x * -1;
+        if((*y = rand() % MAP_SIZE - CAR_SIZE) < 0)
+            *y = *y * -1;
     }
     else{               // Horizontal
-        *x = rand() % MAP_SIZE - CAR_SIZE;
-        *y = rand() % MAP_SIZE;
+        if((*x = rand() % MAP_SIZE - CAR_SIZE) < 0)
+            *x = *x * -1;
+        if((*y = rand() % MAP_SIZE) < 0)
+            *y = *y * -1;
     }
 }
 
@@ -74,36 +86,40 @@ void singleplayer(int inputs[2], int outputs[2]){
     // Generate CPU's map.
 
     // place carrier
-    int x,y,orientation;
-
+    int x, y, orientation;
 
     rand_ship_coord(&x, &y, &orientation, CAR_SIZE);
+    //printf("CAR: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     place_ship(&cpu_ships_map, x, y, orientation, CAR_SIZE, 'C'); 
 
 
     // place battleship
     do{
         rand_ship_coord(&x, &y, &orientation, BAT_SIZE);
+        //printf("BAT: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     }
-    while(place_ship(&cpu_ships_map, x, y, orientation, BAT_SIZE, 'B') != -1);
+    while(place_ship(&cpu_ships_map, x, y, orientation, BAT_SIZE, 'B') == -1);
 
     // place destroyer
     do{
         rand_ship_coord(&x, &y, &orientation, DES_SIZE);
+        //printf("DES: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     }
-    while(place_ship(&cpu_ships_map, x, y, orientation, DES_SIZE, 'D') != -1);
+    while(place_ship(&cpu_ships_map, x, y, orientation, DES_SIZE, 'D') == -1);
 
     // place sub
     do{
         rand_ship_coord(&x, &y, &orientation, SUB_SIZE);
+        //printf("SUB: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     }
-    while(place_ship(&cpu_ships_map, x, y, orientation, SUB_SIZE, 'S') != -1);
+    while(place_ship(&cpu_ships_map, x, y, orientation, SUB_SIZE, 'S') == -1);
 
     // place patrol boat
     do{
         rand_ship_coord(&x, &y, &orientation, PAT_SIZE);
+        //printf("PAT: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     }
-    while(place_ship(&cpu_ships_map, x, y, orientation, PAT_SIZE, 'P') != -1);
+    while(place_ship(&cpu_ships_map, x, y, orientation, PAT_SIZE, 'P') == -1);
 
     print_map(cpu_ships_map);
     exit(0);
