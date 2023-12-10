@@ -7,8 +7,9 @@
 #include "constants.h"
 
 /**
- * The print_map() method.
- * @param map a 2D array to be printed as a battleship map.
+ * Prints a map.
+ * 
+ * @param map A square 2D array of size MAP_SIZE to be printed as a battleship map.
 */
 void print_map(char map[MAP_SIZE][MAP_SIZE]){
 
@@ -54,16 +55,22 @@ void print_map(char map[MAP_SIZE][MAP_SIZE]){
 }
 
 /**
+ * Prints the title
+*/
+void print_title(){
+    printf("\t\tBATTLESHIP\n\n");
+}
+
+/**
  * Prints the starter menu.
 */
 void print_menu(){
-    printf("\t\tBATTLESHIP\n\n");
     printf("Choose an option:\n");
     printf("  (1) Single player\n");
     printf("  (2) Multiplayer\n");
     printf("  (3) Settings\n");
-    printf("  (3) How to play\n");
-    printf("  (4) Quit\n");
+    printf("  (4) How to play\n");
+    printf("  (5) Quit\n");
 }
 
 /**
@@ -73,10 +80,16 @@ void print_instructions(){
     printf("Havent written them yet, sorry.\n");
 }
 
+/**
+ * Prints the settings menu.
+*/
 void print_settings_menu(){
     printf("Not implemented yet, sorry.\n");
 }
 
+/**
+ * Prints the networking options.
+*/
 void print_networking_options(){
     printf("Networking options: \n");
     printf("  (1) Host Server\n");
@@ -84,9 +97,42 @@ void print_networking_options(){
     printf("  (3) Return to menu\n");
 }
 
-int get_selection(){
+/**
+ * Gets an integer user input.
+*/
+int get_menu_selection(){
     unsigned int choice;
     printf("\nChoice: ");
     scanf("%d", &choice);
     return choice;
+}
+
+struct target_coord get_coord(){
+
+    struct target_coord retval;
+
+    while (retval.x_coord != 0){
+
+        printf("Letter: ");
+        scanf("%c\n", &retval.x_coord);
+
+        if ((retval.x_coord >'a' && retval.x_coord > 'z'))            // If y is lowercase, change to uppercase
+            retval.x_coord = retval.x_coord - 32;
+
+        if (retval.x_coord < 'A' || retval.x_coord > 'A' + MAP_SIZE){ // Make sure the coord is in a valid range
+            printf("The coordinate %c is invalid, please choose a character between 'A' and '%c'.\n", retval.x_coord, 'A' + MAP_SIZE);
+            retval.x_coord = 0;                          // Continue the loop
+        }
+    }
+
+    while (retval.y_coord > 0 && retval.y_coord < MAP_SIZE){
+
+        printf("Number: ");
+        scanf("%d\n", &retval.y_coord);
+        
+        if (retval.y_coord < 0 || retval.y_coord > MAP_SIZE)
+            prinf("The coordinate %d is invalid, please choose a number between 1 and %d", retval.y_coord, MAP_SIZE);
+    }
+    
+    return retval;
 }
