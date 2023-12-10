@@ -1,4 +1,4 @@
 all: battleship
 
-battleship: battleship.c printing.h constants.h
+battleship: battleship.c battleshipio.h constants.h
 	gcc battleship.c -o battleship -Wall

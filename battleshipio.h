@@ -131,7 +131,7 @@ struct target_coord get_coord(){
         scanf("%d\n", &retval.y_coord);
         
         if (retval.y_coord < 0 || retval.y_coord > MAP_SIZE)
-            prinf("The coordinate %d is invalid, please choose a number between 1 and %d", retval.y_coord, MAP_SIZE);
+            printf("The coordinate %d is invalid, please choose a number between 1 and %d", retval.y_coord, MAP_SIZE);
     }
     
     return retval;

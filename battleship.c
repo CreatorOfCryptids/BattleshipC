@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include "printing.h"
+#include "battleshipio.h"
 #include "constants.h"
 
 /**
@@ -318,7 +318,7 @@ int main(){
     int patrol_boat = PAT_SIZE;
 
     // Make player's map.
-    
+
 
 
     // While both players have an unsunk battleship, let them hit back and forth.
