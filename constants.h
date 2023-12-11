@@ -6,7 +6,7 @@
 #define PAT_SIZE 2
 #define TOTAL_HITS (CAR_SIZE + BAT_SIZE + DES_SIZE + SUB_SIZE + PAT_SIZE)
 
-struct target_coord{
-    char x_coord;    
-    int y_coord;
+struct coord{
+    int x;    
+    int y;
 };

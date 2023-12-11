@@ -6,6 +6,8 @@
 #include <string.h>
 #include "constants.h"
 
+char buff[256];
+
 /**
  * Prints a map.
  * 
@@ -99,40 +101,77 @@ void print_networking_options(){
 
 /**
  * Gets an integer user input.
+ * 
+ * @return The inputed integer, or 0 if input is unreadable.
 */
 int get_menu_selection(){
     unsigned int choice;
+
     printf("\nChoice: ");
-    scanf("%d", &choice);
+    scanf(" %[^\n]%*c", buff);
+
+    choice = atoi(buff);
+
     return choice;
 }
 
-struct target_coord get_coord(){
+/**
+ * Gets a coordinate from user input.
+ * 
+ * @return The selected coordinate.
+*/
+struct coord get_coord(){
 
-    struct target_coord retval;
+    struct coord retval;
+    retval.x = 0;
+    retval.y = -1;
 
-    while (retval.x_coord != 0){
+    char x_letter = 0;
 
+    do {
         printf("Letter: ");
-        scanf("%c\n", &retval.x_coord);
+        scanf(" %[^\n]%*c", buff);
 
-        if ((retval.x_coord >'a' && retval.x_coord > 'z'))            // If y is lowercase, change to uppercase
-            retval.x_coord = retval.x_coord - 32;
+        x_letter = buff[0];
 
-        if (retval.x_coord < 'A' || retval.x_coord > 'A' + MAP_SIZE){ // Make sure the coord is in a valid range
-            printf("The coordinate %c is invalid, please choose a character between 'A' and '%c'.\n", retval.x_coord, 'A' + MAP_SIZE);
-            retval.x_coord = 0;                          // Continue the loop
+        if ((x_letter >='a' && x_letter <= 'z'))            // If y is lowercase, change to uppercase
+            x_letter = x_letter - 32;
+
+        if (x_letter < 'A' || x_letter > 'A' + MAP_SIZE -1){ // Make sure the coord is in a valid range
+            printf("The coordinate %c is invalid, please choose a character between 'A' and '%c'.\n", retval.x, ('A' + MAP_SIZE - 1));
+            x_letter = 0;                          // Continue the loop
         }
-    }
 
-    while (retval.y_coord > 0 && retval.y_coord < MAP_SIZE){
+        retval.x = (int) (x_letter - 'A' - 1);
+
+    }while (x_letter == 0);
+
+    // printf("Escape???");
+
+    do {
 
         printf("Number: ");
-        scanf("%d\n", &retval.y_coord);
+        scanf(" %[^\n]%*c", buff);
+
+        retval.y = atoi(buff);
         
-        if (retval.y_coord < 0 || retval.y_coord > MAP_SIZE)
-            printf("The coordinate %d is invalid, please choose a number between 1 and %d", retval.y_coord, MAP_SIZE);
-    }
+        if (retval.y < 1 || retval.y > MAP_SIZE){   // If the input is invalid, loop again
+            printf("The coordinate %d is invalid, please choose a number between 1 and %d\n", retval.y, MAP_SIZE);
+            continue;
+        }
+        else    // Otherwize break;
+            break;  
+
+    }while(1);
     
     return retval;
+}
+
+/**
+ * Prints a coordinate.
+ * 
+ * @param coord The coordinate to be printed.
+*/
+void print_coord(struct coord coord){
+    printf("%c%d", coord.x + 'A' +1, coord.y);
 }

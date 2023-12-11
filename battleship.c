@@ -6,7 +6,6 @@
 #include <signal.h>
 
 #include "battleshipio.h"
-#include "constants.h"
 
 /**
  * Initializes a square 2D array of size MAP_SIZE.
@@ -23,29 +22,28 @@ void init_empty_map(char map[MAP_SIZE][MAP_SIZE]){
  * Places a ship into a map with the desiered coordinates and orientation.
  * 
  * @param map A 2D square array of size MAP_SIZE
- * @param x The starting x coordinate of the ship to be added to the map
- * @param y The starting y coordinate of the ship to be added to the map
+ * @param coord The starting coordinate of the ship to be added to the map
  * @param orientation The orientation of the ship, with 1 being vertical and 2 being horizontal
  * @param ship_type The type of ship being added
  * 
 */
-int place_ship(char map[MAP_SIZE][MAP_SIZE], int x, int y, int orientation, int length, char ship_type){
+int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation, int length, char ship_type){
     
     if(orientation){// Vertical
         for(int i = 0; i<length; i++)
-            if (map[x][y+i] != ' ')
+            if (map[coord.x][coord.y+i] != ' ')
                 return -1;
         
         for(int i = 0; i<length; i++)
-            map[x][y+i] = ship_type;
+            map[coord.x][coord.y+i] = ship_type;
     }
     else{           // Horizontal
         for(int i = 0; i<length; i++)
-            if (map[x+i][y] != ' ')
+            if (map[coord.x+i][coord.y] != ' ')
                 return -1;
         
         for(int i = 0; i<length; i++)
-            map[x+i][y] = ship_type;
+            map[coord.x+i][coord.y] = ship_type;
     }
     
     return 0;
@@ -55,26 +53,25 @@ int place_ship(char map[MAP_SIZE][MAP_SIZE], int x, int y, int orientation, int 
  * Generates random coordinates for the start of a ship, and it's orientation. 
  * Will not return a value that puts the ship off the edge of the map.
  * 
- * @param x A pointer to the x coordinate
- * @param y A pointer to the y coordinate
+ * @param coord A pointer to the coordinate for generation.
  * @param orientation A pointer to the orientation of the ship (with 1 being vertical and 0 being horizontal)
  * @param ship_length The length of the ship.
 */
-void rand_ship_coord(int *x, int *y, int *orientation, int ship_length){
+void rand_ship_coord(struct coord *coord, int *orientation, int ship_length){
 
     *orientation = rand() % 2; // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
 
     if (*orientation){  // Vertical
-        if((*x = rand() % MAP_SIZE) < 0)
-            *x = *x * -1;
-        if((*y = rand() % MAP_SIZE - CAR_SIZE) < 0)
-            *y = *y * -1;
+        if((coord->x = rand() % MAP_SIZE) < 0)
+            coord->x = coord->x * -1;
+        if((coord->y = rand() % MAP_SIZE - CAR_SIZE) < 0)
+            coord->y = coord->y * -1;
     }
     else{               // Horizontal
-        if((*x = rand() % MAP_SIZE - CAR_SIZE) < 0)
-            *x = *x * -1;
-        if((*y = rand() % MAP_SIZE) < 0)
-            *y = *y * -1;
+        if((coord->x = rand() % MAP_SIZE - CAR_SIZE) < 0)
+            coord->x = coord->x * - 1;
+        if((coord->y = rand() % MAP_SIZE) < 0)
+            coord->y = coord->y * - 1;
     }
 }
 
@@ -99,43 +96,46 @@ void singleplayer(int inputs[2], int outputs[2]){
     // Generate CPU's map.
 
     // place carrier
-    int x, y, orientation;
+    struct coord coord;
+    int orientation;
 
-    rand_ship_coord(&x, &y, &orientation, CAR_SIZE);
+    rand_ship_coord(&coord, &orientation, CAR_SIZE);
     //printf("CAR: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
-    place_ship(cpu_ships_map, x, y, orientation, CAR_SIZE, 'C'); 
+    place_ship(cpu_ships_map, coord, orientation, CAR_SIZE, 'C'); 
 
 
     // place battleship
     do{
-        rand_ship_coord(&x, &y, &orientation, BAT_SIZE);
+        rand_ship_coord(&coord, &orientation, BAT_SIZE);
         //printf("BAT: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     }
-    while(place_ship(cpu_ships_map, x, y, orientation, BAT_SIZE, 'B') == -1);
+    while(place_ship(cpu_ships_map, coord, orientation, BAT_SIZE, 'B') == -1);
 
     // place destroyer
     do{
-        rand_ship_coord(&x, &y, &orientation, DES_SIZE);
+        rand_ship_coord(&coord, &orientation, DES_SIZE);
         //printf("DES: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     }
-    while(place_ship(cpu_ships_map, x, y, orientation, DES_SIZE, 'D') == -1);
+    while(place_ship(cpu_ships_map, coord, orientation, DES_SIZE, 'D') == -1);
 
     // place sub
     do{
-        rand_ship_coord(&x, &y, &orientation, SUB_SIZE);
+        rand_ship_coord(&coord, &orientation, SUB_SIZE);
         //printf("SUB: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     }
-    while(place_ship(cpu_ships_map, x, y, orientation, SUB_SIZE, 'S') == -1);
+    while(place_ship(cpu_ships_map, coord, orientation, SUB_SIZE, 'S') == -1);
 
     // place patrol boat
     do{
-        rand_ship_coord(&x, &y, &orientation, PAT_SIZE);
+        rand_ship_coord(&coord, &orientation, PAT_SIZE);
         //printf("PAT: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     }
-    while(place_ship(cpu_ships_map, x, y, orientation, PAT_SIZE, 'P') == -1);
+    while(place_ship(cpu_ships_map, coord, orientation, PAT_SIZE, 'P') == -1);
 
-    //print_map(cpu_ships_map);
+    /* Test random map generation.
+    print_map(cpu_ships_map);
     exit(0);
+    /**/
 
     int carrier = CAR_SIZE;
     int battleship = BAT_SIZE;
@@ -146,10 +146,10 @@ void singleplayer(int inputs[2], int outputs[2]){
     int cpu_hits = 0;        // Amount of hits AGAINST the oponent
     int player_hits = 0;    // Amount of hits AGAINST the player
 
-    struct target_coord target;
+    struct coord target;
 
     write(inputs[1], "R", 1);   // Send message to parent to let it continue.
-    read(outputs[0], &target, sizeof(struct target_coord));
+    read(outputs[0], &target, sizeof(struct coord));
 
     while(cpu_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
         // Pipe random coordinates until a hit.
@@ -244,6 +244,9 @@ pid_t init_multiplayer(int inputs[2], int outputs[2], char connection_choice){
     return child;
 }
 
+/**
+ * Main function.
+*/
 int main(){
 
     unsigned int choice = 0;
@@ -265,8 +268,7 @@ int main(){
     // Print title
     print_title();
 
-    do{
-        //Print menu and get selections.
+    do{ //Print menu and get selections.
         print_menu();
 
         if ((choice = get_menu_selection()) == 1)    // If singleplayer, fork a process to play battlship with rand.
@@ -286,8 +288,9 @@ int main(){
 
             char* output = 0;
 
-            read(inputs[0], output, 1); // Waits until a message is sent by the child process, indicating that 
-            if (*output == -1)  // Quit if we recive an error message.
+            read(inputs[0], output, 1); // Waits until a message is sent by the child process, indicating that the connection has been made.
+
+            if (*output == -1)          // Quit if we recive an error message.
                 exit(1);
         }
         else if (choice == 3)
@@ -296,6 +299,19 @@ int main(){
             print_instructions();
         else if(choice == 5)
             return 0;
+
+        else if(choice == 6){
+            printf("\t\tTESTING MODE\n");
+
+            //* Test get_coord()
+            struct coord test;
+            while(1){
+                test = get_coord();
+                print_coord(test);
+                printf("\n");
+            }
+            /**/
+        }
         else
             printf("The symbol '%d' is not a valid choice, please choose another selection", choice);
     }while(choice >= 2 || choice == 0);
@@ -322,7 +338,7 @@ int main(){
 
 
     // While both players have an unsunk battleship, let them hit back and forth.
-    struct target_coord target;
+    struct coord target;
 
     while(op_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
         
