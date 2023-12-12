@@ -5,6 +5,7 @@
 #define SUB_SIZE 3
 #define PAT_SIZE 2
 #define TOTAL_HITS (CAR_SIZE + BAT_SIZE + DES_SIZE + SUB_SIZE + PAT_SIZE)
+#define SHIP_COUNT 5
 
 struct coord{
     int x;    

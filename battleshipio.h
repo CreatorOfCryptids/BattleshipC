@@ -9,6 +9,27 @@
 char buff[256];
 
 /**
+ * Gets a character input from the user.
+ * 
+ * @return The selected character.
+*/
+char read_char(){
+    scanf(" %[^\n]%*c", buff);
+    return buff[0];
+}
+
+/**
+ * Gets an integer from the user. If the inputed item is not a number, returns 0.
+ * 
+ * @return The selected number.
+ * @
+*/
+int read_int(){
+    scanf(" %[^\n]%*c", buff);
+    return atoi(buff);
+}
+
+/**
  * Prints a map.
  * 
  * @param map A square 2D array of size MAP_SIZE to be printed as a battleship map.
@@ -108,9 +129,7 @@ int get_menu_selection(){
     unsigned int choice;
 
     printf("\nChoice: ");
-    scanf(" %[^\n]%*c", buff);
-
-    choice = atoi(buff);
+    choice = read_int();
 
     return choice;
 }
@@ -120,7 +139,7 @@ int get_menu_selection(){
  * 
  * @return The selected coordinate.
 */
-struct coord get_coord(){
+struct coord read_coord(){
 
     struct coord retval;
     retval.x = 0;
@@ -130,9 +149,7 @@ struct coord get_coord(){
 
     do {
         printf("Letter: ");
-        scanf(" %[^\n]%*c", buff);
-
-        x_letter = buff[0];
+        x_letter = read_char();
 
         if ((x_letter >='a' && x_letter <= 'z'))            // If y is lowercase, change to uppercase
             x_letter = x_letter - 32;
@@ -151,9 +168,7 @@ struct coord get_coord(){
     do {
 
         printf("Number: ");
-        scanf(" %[^\n]%*c", buff);
-
-        retval.y = atoi(buff);
+        retval.y = read_int();
         
         if (retval.y < 1 || retval.y > MAP_SIZE){   // If the input is invalid, loop again
             printf("The coordinate %d is invalid, please choose a number between 1 and %d\n", retval.y, MAP_SIZE);
@@ -174,4 +189,49 @@ struct coord get_coord(){
 */
 void print_coord(struct coord coord){
     printf("%c%d", coord.x + 'A' +1, coord.y);
+}
+
+/**
+ * Gets the user's selection of which ship they'd like to place.
+ * 
+ * @return A number 0-4 That corresponds to the user's choice. 
+ * 0 - Carrier
+ * 1 - Battleship
+ * 2 - Destroyer
+ * 3 - Submarine
+ * 4 - Patrol Boat
+*/
+int get_ship_selection(){
+    int choice = -1;
+
+    printf("Which ship would you like to move/place?\n");
+    printf("  (C)arrier\t%d tiles long.\n", CAR_SIZE);
+    printf("  (B)attleship\t%d tiles long.\n", BAT_SIZE);
+    printf("  (D)estroyer\t%d tiles long.\n", DES_SIZE);
+    printf("  (S)ubmarine\t%d tiles long.\n", SUB_SIZE);
+    printf("  (P)atrol Boat\t%d tiles long.\n", PAT_SIZE);
+    printf("Choice: ");
+
+    do{
+        char input = read_char();
+
+        if ((input >='a' && input <= 'z'))            // If input is lowercase, change to uppercase
+            input = input - 32;
+
+        if(input == 'C')
+            choice = 0;
+        else if(input == 'B')
+            choice = 1;
+        else if(input == 'D')
+            choice = 2;
+        else if(input == 'S')
+            choice = 3;
+        else if(input == 'P')
+            choice = 4;
+        else
+            printf("The selection '%c' is not on the list, please choose a selection from the list.", input);
+
+    }while(choice == -1);
+
+    return choice;
 }
