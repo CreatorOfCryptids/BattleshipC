@@ -56,16 +56,16 @@ void print_map(char map[MAP_SIZE][MAP_SIZE]){
 
 
     // Print each row with a row number on the leftmost side.
-    for(int x = 0; x<MAP_SIZE; x++){
+    for(int y = 0; y<MAP_SIZE; y++){
 
         for(int i = 0; i<MAP_SIZE+1; i++)
             printf("+———");
 
         printf("+\n");
 
-        printf("|%2d ", x+1);
+        printf("|%2d ", y+1);
 
-        for(int y = 0; y<MAP_SIZE; y++)
+        for(int x = 0; x<MAP_SIZE; x++)
             printf("| %c ", map[x][y]);
 
         printf("|\n");
@@ -159,25 +159,25 @@ struct coord read_coord(){
             x_letter = 0;                          // Continue the loop
         }
 
-        retval.x = (int) (x_letter - 'A' - 1);
+        retval.x = (int) (x_letter - 'A');
 
     }while (x_letter == 0);
 
     // printf("Escape???");
 
-    do {
+    while(1){
 
         printf("Number: ");
-        retval.y = read_int();
+        retval.y = read_int() - 1;  // Start at zero.
         
-        if (retval.y < 1 || retval.y > MAP_SIZE){   // If the input is invalid, loop again
+        if (retval.y < 0 || retval.y > MAP_SIZE){   // If the input is invalid, loop again
             printf("The coordinate %d is invalid, please choose a number between 1 and %d\n", retval.y, MAP_SIZE);
             continue;
         }
         else    // Otherwize break;
             break;  
 
-    }while(1);
+    }
     
     return retval;
 }
@@ -188,7 +188,7 @@ struct coord read_coord(){
  * @param coord The coordinate to be printed.
 */
 void print_coord(struct coord coord){
-    printf("%c%d", coord.x + 'A' +1, coord.y);
+    printf("%c%d", coord.x + 'A', coord.y + 1);
 }
 
 /**

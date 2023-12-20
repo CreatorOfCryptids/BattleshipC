@@ -29,6 +29,8 @@ void init_empty_map(char map[MAP_SIZE][MAP_SIZE]){
 */
 int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation, int length, char ship_symbol){
     
+    printf("DEBUG PLACE_SHIP: X: %d Y: %d\n", coord.x, coord.y);
+
     if(orientation){// Vertical
         // Check if the ship is on the map.
         if(coord.x >= MAP_SIZE || coord.x < 0 || coord.y + length >= MAP_SIZE || coord.y < 0)
@@ -359,8 +361,7 @@ int main(){
             printf("\nWhere do you want to place the ship?\n(Note that the entered coordinate is the leftmost/highest point of the ship)\n");
             ship_coord = read_coord();
 
-            printf("DEBUG: Placing ship at ");
-            print_coord(ship_coord);
+            printf("DEBUG: Placing ship at X: %d Y: %d\n", ship_coord.x, ship_coord.y);
 
             int retval = place_ship(player_map, ship_coord, orientation, ship_lengths[ship_choice], ship_symbols[ship_choice]);
 
