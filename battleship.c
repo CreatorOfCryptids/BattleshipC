@@ -24,10 +24,10 @@ void init_empty_map(char map[MAP_SIZE][MAP_SIZE]){
  * @param map A 2D square array of size MAP_SIZE
  * @param coord The starting coordinate of the ship to be added to the map
  * @param orientation The orientation of the ship, with 1 being vertical and 0 being horizontal
- * @param ship_type The type of ship being added
+ * @param ship_symbol The type of ship being added
  * @return -1 for a collision, 0 if the ship can be added, and 1 if the ship goes off the edge of the map.
 */
-int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation, int length, char ship_type){
+int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation, int length, char ship_symbol){
     
     if(orientation){// Vertical
         // Check if the ship is on the map.
@@ -41,7 +41,7 @@ int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation
         
         // Place in map
         for(int i = 0; i<length; i++)
-            map[coord.x][coord.y+i] = ship_type;
+            map[coord.x][coord.y+i] = ship_symbol;
     }
     else{           // Horizontal
         // Check if its on the map
@@ -55,7 +55,7 @@ int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation
         
         // Place in map
         for(int i = 0; i<length; i++)
-            map[coord.x+i][coord.y] = ship_type;
+            map[coord.x+i][coord.y] = ship_symbol;
     }
     
     return 0;
@@ -342,7 +342,8 @@ int main(){
     int ship_lengths[5] = {CAR_SIZE, BAT_SIZE, DES_SIZE, SUB_SIZE, PAT_SIZE};
     char ship_symbols[5] = "CBDSP";
 
-    int ships_placed = 0;
+    int ship_tiles_placed = 0;
+
     while(1){
         // Display the current map
         printf("\n");   // Formatting.
@@ -352,37 +353,59 @@ int main(){
         // Ask the user which ship they'd like to select.
         int ship_choice = get_ship_selection();
 
+        // Remove ship if already placed.
+        for(int x=0; x<MAP_SIZE; x++) 
+            for(int y =0; y<MAP_SIZE; y++)
+                if(player_map[x][y] == ship_symbols[ship_choice])
+                    player_map[x][y] = ' ';
+
         // Ask where they want to put the ship.
         struct coord ship_coord;
         int orientation;
-        int success = 0;        // Records wheather the ship was placed
 
         while (1){
+            // Vertical or Horizontal?
             printf("\nDo you want the ship to be placed (V)erticaly or (H)orizontally?\n");
-            printf("Selection: ");
-            char choice = read_char();
+            char choice = 0;
+            while(choice == 0){
+                printf("Selection: ");
+                choice = read_char();
 
-            if (choice == 'V' || choice == 'v')
-                orientation = 1;
-            else if (choice == 'H' || choice == 'h')
-                orientation = 0;
+                if (choice == 'V' || choice == 'v')
+                    orientation = 1;
+                else if (choice == 'H' || choice == 'h')
+                    orientation = 0;
+                else{
+                    printf("The selection %c is invalid, please enter either (V)ertical or (H)orizontal.\n", choice);
+                    choice = 0;
+                }
+            }
 
-            printf("\nWhere do you want to place the ship? \n(Note that the entered coordinate is the leftmost or highest point of the ship)\n");
+            printf("\nWhere do you want to place the ship?\n(Note that the entered coordinate is the leftmost/highest point of the ship)\n");
             ship_coord = read_coord();
 
-            success = place_ship(player_map, ship_coord, orientation, ship_lengths[ship_choice], ship_symbols[ship_choice]);
+            int retval = place_ship(player_map, ship_coord, orientation, ship_lengths[ship_choice], ship_symbols[ship_choice]);
 
-            if(success == 0)
+            if(retval == 0){
+                ship_tiles_placed + ship_lengths[ship_choice];
                 break;
-            else if (success == 1)
+            }
+            else if (retval == 1)
                 printf("The ship goes off the edge of the map, please choose a valid coordinate.\n");
-            else if (success == -1)
+            else if (retval == -1)
                 printf("The ship overlaps with another ship, please choose a different location.\n");
         }
 
         // If all the ships have been placed, ask if they are ready. If so, break.
-
-        // TODO: Implement
+        if(ship_tiles_placed == TOTAL_HITS){
+            printf("Are you happy with this map (Y/N)?\n\n");
+            print_map(player_map);
+            char happy = read_char();
+            if (happy == 'Y' || happy == 'y')
+                break;
+            else 
+                continue;
+        }
     }
 
 
