@@ -90,7 +90,7 @@ void rand_ship_coord(struct coord *coord, int *orientation, int ship_length){
 /**
  * The code for the singleplayer opponent process.
  * 
- * @param inputs The pipe IDs to send info TO the host Process FROM the child opponent process.
+ * @param inputs The pipe IDs to send info TO the host process FROM the child opponent process.
  * @param outpus The pipe IDs to send info FROM the host process the TO child opponent process.
 */
 void singleplayer(int inputs[2], int outputs[2]){
@@ -115,47 +115,22 @@ void singleplayer(int inputs[2], int outputs[2]){
     //printf("CAR: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     place_ship(cpu_ships_map, coord, orientation, CAR_SIZE, 'C'); 
 
+    int ship_lengths[5] = {CAR_SIZE, BAT_SIZE, DES_SIZE, SUB_SIZE, PAT_SIZE};
+    char ship_symbols[5] = "CBDSP";
 
-    // place battleship
-    do{
-        rand_ship_coord(&coord, &orientation, BAT_SIZE);
-        //printf("BAT: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
+    for(int i=1;i<5;i++){ // Skip first entry becuase already placed Carrier.
+        do{
+            rand_ship_coord(&coord, &orientation, ship_lengths[i]);
+        }
+        while(place_ship(cpu_ships_map, coord, orientation, ship_lengths[i], ship_symbols[i]) == -1);
     }
-    while(place_ship(cpu_ships_map, coord, orientation, BAT_SIZE, 'B') == -1);
-
-    // place destroyer
-    do{
-        rand_ship_coord(&coord, &orientation, DES_SIZE);
-        //printf("DES: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
-    }
-    while(place_ship(cpu_ships_map, coord, orientation, DES_SIZE, 'D') == -1);
-
-    // place sub
-    do{
-        rand_ship_coord(&coord, &orientation, SUB_SIZE);
-        //printf("SUB: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
-    }
-    while(place_ship(cpu_ships_map, coord, orientation, SUB_SIZE, 'S') == -1);
-
-    // place patrol boat
-    do{
-        rand_ship_coord(&coord, &orientation, PAT_SIZE);
-        //printf("PAT: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
-    }
-    while(place_ship(cpu_ships_map, coord, orientation, PAT_SIZE, 'P') == -1);
 
     /* Test random map generation.
     print_map(cpu_ships_map);
     exit(0);
     /**/
 
-    int carrier = CAR_SIZE;
-    int battleship = BAT_SIZE;
-    int destroyer = DES_SIZE;
-    int submarine = SUB_SIZE;
-    int patrol_boat = PAT_SIZE;
-
-    int cpu_hits = 0;        // Amount of hits AGAINST the oponent
+    int cpu_hits = 0;       // Amount of hits AGAINST the CPU
     int player_hits = 0;    // Amount of hits AGAINST the player
 
     struct coord target;
@@ -361,7 +336,7 @@ int main(){
 
         // Ask where they want to put the ship.
         struct coord ship_coord;
-        int orientation;
+        int orientation = 1;
 
         while (1){
             // Vertical or Horizontal?
@@ -384,10 +359,13 @@ int main(){
             printf("\nWhere do you want to place the ship?\n(Note that the entered coordinate is the leftmost/highest point of the ship)\n");
             ship_coord = read_coord();
 
+            printf("DEBUG: Placing ship at ");
+            print_coord(ship_coord);
+
             int retval = place_ship(player_map, ship_coord, orientation, ship_lengths[ship_choice], ship_symbols[ship_choice]);
 
             if(retval == 0){
-                ship_tiles_placed + ship_lengths[ship_choice];
+                ship_tiles_placed += ship_lengths[ship_choice];
                 break;
             }
             else if (retval == 1)
