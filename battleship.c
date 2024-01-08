@@ -137,7 +137,7 @@ void singleplayer(int inputs[2], int outputs[2]){
 
     struct coord target;
 
-    write(inputs[1], "R", 1);   // Send message to parent to let it continue.
+    write(inputs[1], "r", 1);   // Send message to parent to let it continue.
     read(outputs[0], &target, sizeof(struct coord));
 
     while(cpu_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
@@ -387,6 +387,20 @@ int main(){
         }
     }
 
+    //Tell other process that hoast is ready
+    if(write(outputs[1], "R", 1) != 1){
+        perror("HOST: Issue writng to output.");
+        exit(1);
+    }
+
+    printf("Waiting for opponent...\n");
+
+    char responce;
+    read(inputs[0], responce, 1);
+
+    if (responce == 'R'){   // Capital R means that this user goes second.
+    
+    }
 
     // While both players have an unsunk battleship, let them hit back and forth.
     struct coord target;
@@ -397,5 +411,5 @@ int main(){
 
     kill(oponent_process, SIGKILL);
 
-    return 1;
+    return 0;
 }
