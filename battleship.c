@@ -137,7 +137,7 @@ void singleplayer(int inputs[2], int outputs[2]){
 
     struct coord target;
 
-    write(inputs[1], "r", 1);   // Send message to parent to let it continue.
+    write(inputs[1], "C", 1);   // Send message to parent to let it continue.
     read(outputs[0], &target, sizeof(struct coord));
 
     while(cpu_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
@@ -160,7 +160,12 @@ void multiplayer_server(int inputs[2], int outputs[2]){
 
     // Networking bs
 
-    write(inputs[1], "1", 1);   // Allow the main process to continue.
+    printf("Waiting for connection...\n");
+
+    if (0){     // Wait for confirmed connection.
+        write(inputs[1], "1", sizeof(char));   // Allow the main process to continue.
+    }
+    
 
 
 
@@ -224,7 +229,7 @@ pid_t init_multiplayer(int inputs[2], int outputs[2], char connection_choice){
             multiplayer_server(inputs, outputs);
         else 
             multiplayer_client(inputs, outputs);
-
+        
     }
     else if (child == -1){
         perror("There was an issue forking the multiplayer process");
