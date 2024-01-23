@@ -242,8 +242,6 @@ pid_t init_multiplayer(int inputs[2], int outputs[2], char connection_choice){
 */
 int main(){
 
-    unsigned int choice = 0;
-    pid_t oponent_process = 0;
     int inputs[2];      // Information coming FROM the chosen oponent
     int outputs[2];     // Information going TO the chosen oponent
 
@@ -261,6 +259,9 @@ int main(){
     // Print title
     print_title();
 
+    unsigned int choice = 0;
+    pid_t oponent_process = 0;
+    
     do{ //Print menu and get selections.
         print_menu();
 

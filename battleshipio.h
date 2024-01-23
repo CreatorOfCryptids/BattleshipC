@@ -155,7 +155,7 @@ struct coord read_coord(){
             x_letter = x_letter - 32;
 
         if (x_letter < 'A' || x_letter > 'A' + MAP_SIZE -1){ // Make sure the coord is in a valid range
-            printf("The coordinate %c is invalid, please choose a character between 'A' and '%c'.\n", retval.x, ('A' + MAP_SIZE - 1));
+            printf("The coordinate %c is invalid, please choose a character between 'A' and '%c'.\n", x_letter, ('A' + MAP_SIZE - 1));
             x_letter = 0;                          // Continue the loop
         }
 
@@ -171,7 +171,7 @@ struct coord read_coord(){
         retval.y = read_int() - 1;  // Start at zero.
         
         if (retval.y < 0 || retval.y > MAP_SIZE){   // If the input is invalid, loop again
-            printf("The coordinate %d is invalid, please choose a number between 1 and %d\n", retval.y, MAP_SIZE);
+            printf("The coordinate %d is invalid, please choose a number between 1 and %d\n", retval.y + 1, MAP_SIZE);
             continue;
         }
         else    // Otherwize break;
