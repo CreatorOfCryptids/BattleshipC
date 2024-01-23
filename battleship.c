@@ -29,11 +29,11 @@ void init_empty_map(char map[MAP_SIZE][MAP_SIZE]){
 */
 int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation, int length, char ship_symbol){
     
-    printf("DEBUG PLACE_SHIP: X: %d Y: %d\n", coord.x, coord.y);
+    //printf("DEBUG PLACE_SHIP: X: %d Y: %d\n", coord.x, coord.y);
 
     if(orientation){// Vertical
         // Check if the ship is on the map.
-        if(coord.x >= MAP_SIZE || coord.x < 0 || coord.y + length >= MAP_SIZE || coord.y < 0)
+        if(coord.x >= MAP_SIZE || coord.x < 0 || coord.y + length > MAP_SIZE || coord.y < 0)
             return 1;
 
         // Check for collisions
@@ -47,7 +47,7 @@ int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation
     }
     else{           // Horizontal
         // Check if its on the map
-        if(coord.x + length >= MAP_SIZE || coord.x < 0 || coord.y >= MAP_SIZE || coord.y < 0)
+        if(coord.x + length > MAP_SIZE || coord.x < 0 || coord.y >= MAP_SIZE || coord.y < 0)
             return 1;
 
         // Check for collisions
@@ -97,10 +97,6 @@ void rand_ship_coord(struct coord *coord, int *orientation, int ship_length){
 */
 void singleplayer(int inputs[2], int outputs[2]){
     
-    srand(time(NULL));
-    
-    // Generate random map.
-    // Init 2 10x10 2D char arrays all filled with ' '.
     char cpu_ships_map[MAP_SIZE][MAP_SIZE]; // Map containing CPU's ships
     char cpu_hit_map[MAP_SIZE][MAP_SIZE];   // Map containing coordinaties the CPU has attacked.
 
@@ -113,6 +109,7 @@ void singleplayer(int inputs[2], int outputs[2]){
     struct coord coord;
     int orientation;
 
+    srand(time(NULL));
     rand_ship_coord(&coord, &orientation, CAR_SIZE);
     //printf("CAR: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
     place_ship(cpu_ships_map, coord, orientation, CAR_SIZE, 'C'); 
@@ -150,7 +147,7 @@ void singleplayer(int inputs[2], int outputs[2]){
     exit(0);
 }
 
-/**
+/**NOT YET IMPLEMENTED!
  * The code for the multiplayer opponent process that RECIVES information from a client.
  * 
  * @param inputs The pipe IDs to send info TO the host Process FROM the child opponent process.
@@ -176,7 +173,7 @@ void multiplayer_server(int inputs[2], int outputs[2]){
     exit(0);
 }
 
-/**
+/**NOT YET IMPLEMENTED!
  * The code for the multiplayer opponent process that SENDS information to the host.
  * 
  * @param inputs The pipe IDs to send info TO the host Process FROM the child opponent process.
@@ -229,12 +226,14 @@ pid_t init_multiplayer(int inputs[2], int outputs[2], char connection_choice){
             multiplayer_server(inputs, outputs);
         else 
             multiplayer_client(inputs, outputs);
-        
     }
     else if (child == -1){
         perror("There was an issue forking the multiplayer process");
         exit(1);
     }
+        
+
+
     return child;
 }
 
@@ -248,7 +247,7 @@ int main(){
     int inputs[2];      // Information coming FROM the chosen oponent
     int outputs[2];     // Information going TO the chosen oponent
 
-    // Init pipes and check that they work
+    // Init pipes and check that they were initiated correctly.
     if (pipe(inputs) == -1){
         perror("Input piping error");
         exit(1);
@@ -366,7 +365,7 @@ int main(){
             printf("\nWhere do you want to place the ship?\n(Note that the entered coordinate is the leftmost/highest point of the ship)\n");
             ship_coord = read_coord();
 
-            printf("DEBUG: Placing ship at X: %d Y: %d\n", ship_coord.x, ship_coord.y);
+            //printf("DEBUG: Placing ship at X: %d Y: %d\n", ship_coord.x, ship_coord.y);
 
             int retval = place_ship(player_map, ship_coord, orientation, ship_lengths[ship_choice], ship_symbols[ship_choice]);
 
@@ -401,7 +400,7 @@ int main(){
     printf("Waiting for opponent...\n");
 
     char responce;
-    read(inputs[0], responce, 1);
+    read(inputs[0], &responce, 1);
 
     if (responce == 'R'){   // Capital R means that this user goes second.
     
