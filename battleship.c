@@ -7,6 +7,8 @@
 
 #include "battleshipio.h"
 
+char ship_symbols[5] = "CBDSP";
+
 /**
  * Initializes a square 2D array of size MAP_SIZE.
  * 
@@ -90,12 +92,63 @@ void rand_ship_coord(struct coord *coord, int *orientation, int ship_length){
 }
 
 /**
+ * Determines if a ship was hit. Updates the map to reflect the outcome, and returns the result (H, M, or sink).
+ * 
+ * @param ship_map A map containing the host's ships.
+ * @param target_coord The coord of the incoming shot.
+ * @param ship_lengths The remaining lengths of the ships in the host's map.
+ * @param hits A pointer to the host's remaining ship health.
+ * @return A char representing a Hit, Miss, or Sink. Returns the ship symbol of the sunken ship, when a ship is sunk.
+*/
+char incoming_shot(char ship_map[MAP_SIZE][MAP_SIZE], struct coord target_coord, int ship_lengths[SHIP_COUNT], int *hits){
+
+    char target = ship_map[target_coord.x][target_coord.y]; // What was stored in the ship_map at the target coord
+
+    if(target == ' ' || target == 'X') {
+        ship_map[target_coord.x][target_coord.y] = 'X';
+        return 'M';
+    }
+    else if (target == 'H'){
+        return 'M';
+    }
+    else {
+
+        ship_map[target_coord.x][target_coord.y] = 'H';
+        hits++;
+
+        if (target == 'C'){
+            ship_lengths[0]--;
+        }
+        else if (target == 'B'){
+            ship_lengths[1]--;
+        }
+        else if (target == 'D'){
+            ship_lengths[2]--;
+        }
+        else if (target == 'S'){
+            ship_lengths[3]--;
+        }
+        else if (target == 'P'){
+            ship_lengths[4]--;
+        }
+
+        for(int i = 0; i<SHIP_COUNT; i++){
+            if (ship_lengths[i] == 0){
+                ship_lengths[i]--;
+                return ship_symbols[i];
+            }
+        }
+        return 'H';
+    }
+}
+
+/**
  * The code for the singleplayer opponent process.
  * 
- * @param inputs The pipe IDs to send info TO the host process FROM the child opponent process.
- * @param outpus The pipe IDs to send info FROM the host process the TO child opponent process.
+ * @param input The pipe ID to send info TO the host process FROM the child opponent process.
+ * @param output The pipe ID to send info FROM the host process the TO child opponent process.
 */
-void singleplayer(int inputs[2], int outputs[2]){
+void singleplayer(int input, int output){
     
     char cpu_ships_map[MAP_SIZE][MAP_SIZE]; // Map containing CPU's ships
     char cpu_hit_map[MAP_SIZE][MAP_SIZE];   // Map containing coordinaties the CPU has attacked.
@@ -115,7 +168,6 @@ void singleplayer(int inputs[2], int outputs[2]){
     place_ship(cpu_ships_map, coord, orientation, CAR_SIZE, 'C'); 
 
     int ship_lengths[5] = {CAR_SIZE, BAT_SIZE, DES_SIZE, SUB_SIZE, PAT_SIZE};
-    char ship_symbols[5] = "CBDSP";
 
     for(int i=1;i<5;i++){ // Skip first entry becuase already placed Carrier.
         do{
@@ -132,12 +184,15 @@ void singleplayer(int inputs[2], int outputs[2]){
     int cpu_hits = 0;       // Amount of hits AGAINST the CPU
     int player_hits = 0;    // Amount of hits AGAINST the player
 
-    struct coord target;
-
-    write(inputs[1], "C", 1);   // Send message to parent to let it continue.
-    read(outputs[0], &target, sizeof(struct coord));
-
+    write(input, "R", 1);   // Send message to parent to let it continue.
+    
+    struct coord target_coord;
+    struct coord last_hit;
     while(cpu_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
+        // Take in target coord since the user always goes first in single player
+        read(output, &target_coord, sizeof(struct coord));
+        write(input, incoming_shot(cpu_ships_map, target_coord, ship_lengths, &cpu_hits), sizeof(char));        
+        
         // Pipe random coordinates until a hit.
 
 
@@ -150,17 +205,17 @@ void singleplayer(int inputs[2], int outputs[2]){
 /**NOT YET IMPLEMENTED!
  * The code for the multiplayer opponent process that RECIVES information from a client.
  * 
- * @param inputs The pipe IDs to send info TO the host Process FROM the child opponent process.
- * @param outpus The pipe IDs to send info FROM the host process the TO child opponent process.
+ * @param inputs The pipe ID to send info TO the host Process FROM the child opponent process.
+ * @param outpus The pipe ID to send info FROM the host process the TO child opponent process.
 */
-void multiplayer_server(int inputs[2], int outputs[2]){
+void multiplayer_server(int inputs, int outputs){
 
     // Networking bs
 
     printf("Waiting for connection...\n");
 
     if (0){     // Wait for confirmed connection.
-        write(inputs[1], "1", sizeof(char));   // Allow the main process to continue.
+        write(inputs, 'C', sizeof(char));   // Allow the main process to continue.
     }
     
 
@@ -176,16 +231,14 @@ void multiplayer_server(int inputs[2], int outputs[2]){
 /**NOT YET IMPLEMENTED!
  * The code for the multiplayer opponent process that SENDS information to the host.
  * 
- * @param inputs The pipe IDs to send info TO the host Process FROM the child opponent process.
- * @param outpus The pipe IDs to send info FROM the host process the TO child opponent process.
+ * @param input The pipe IDs to send info TO the host Process FROM the child opponent process.
+ * @param output The pipe IDs to send info FROM the host process the TO child opponent process.
 */
-void multiplayer_client(int inputs[2], int outputs[2]){
+void multiplayer_client(int input, int output){
 
     // Networking bs
 
-    write(inputs[1], "1", 1);   // Allow the main process to continue.
-
-
+    write(input, 'C', sizeof(char));   // Allow the main process to continue.
 
     while(1){
 
@@ -200,7 +253,7 @@ void multiplayer_client(int inputs[2], int outputs[2]){
  * @param inputs The pipe IDs to send info TO the host Process FROM the child opponent process.
  * @param outpus The pipe IDs to send info FROM the host process the TO child opponent process.
 */
-pid_t init_singleplayer(int inputs[2], int outputs[2]){
+pid_t init_singleplayer(int inputs, int outputs){
     pid_t child;
     if ((child = fork()) == 0){
         singleplayer(inputs, outputs);
@@ -215,26 +268,30 @@ pid_t init_singleplayer(int inputs[2], int outputs[2]){
 /**
  * Initializes the child process that handles the multiplayer process.
  * 
- * @param inputs The pipe IDs to send info TO the host Process FROM the child opponent process.
- * @param outpus The pipe IDs to send info FROM the host process the TO child opponent process.
+ * @param input The pipe IDs to send info TO the host Process FROM the child opponent process.
+ * @param output The pipe IDs to send info FROM the host process the TO child opponent process.
  * @param connection_choice The user's decition to host (1) or connect (0);
 */
-pid_t init_multiplayer(int inputs[2], int outputs[2], char connection_choice){
+pid_t init_multiplayer(int input, int output, char connection_choice){
     pid_t child;
     if ((child = fork()) == 0){
         if (connection_choice)
-            multiplayer_server(inputs, outputs);
+            multiplayer_server(input, output);
         else 
-            multiplayer_client(inputs, outputs);
+            multiplayer_client(input, output);
+        exit(1);
     }
     else if (child == -1){
         perror("There was an issue forking the multiplayer process");
         exit(1);
     }
-        
+    else{
+        char confirmation;
 
+        read(input, &confirmation, sizeof(char));
 
-    return child;
+        return child;
+    }
 }
 
 /**
@@ -261,20 +318,20 @@ int main(){
 
     unsigned int choice = 0;
     pid_t oponent_process = 0;
-    
+
     do{ //Print menu and get selections.
         print_menu();
 
         if ((choice = get_menu_selection()) == 1)    // If singleplayer, fork a process to play battlship with rand.
-            oponent_process = init_singleplayer(inputs, outputs);
+            oponent_process = init_singleplayer(inputs[1], outputs[0]);
         else if (choice == 2){    // If multiplayer, ask if the user wants to host or connect.
 
             print_networking_options();
 
             if ((choice = get_menu_selection()) == 1)   // User wants to host
-                oponent_process = init_multiplayer(inputs, outputs, 0);
+                oponent_process = init_multiplayer(inputs[1], outputs[0], 0);
             else if(choice == 2)                    // User wants to connect.
-                oponent_process = init_multiplayer( inputs, outputs, 1);
+                oponent_process = init_multiplayer( inputs[1], outputs[0], 1);
             else{                                    // Other
                 choice = 0; // Set to 0, so the while loop keeps working.
                 continue;
@@ -322,7 +379,6 @@ int main(){
     
     // Generate player's map.
     int ship_lengths[5] = {CAR_SIZE, BAT_SIZE, DES_SIZE, SUB_SIZE, PAT_SIZE};
-    char ship_symbols[5] = "CBDSP";
 
     int ship_tiles_placed = 0;
 
@@ -404,11 +460,14 @@ int main(){
     read(inputs[0], &responce, 1);
 
     if (responce == 'R'){   // Capital R means that this user goes second.
-    
+
+    }
+    else {
+
     }
 
     // While both players have an unsunk battleship, let them hit back and forth.
-    struct coord target;
+    struct coord target_coord;
 
     while(op_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
         
