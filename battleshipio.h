@@ -78,6 +78,85 @@ void print_map(char map[MAP_SIZE][MAP_SIZE]){
 }
 
 /**
+ * Prints the two maps side by side.
+ * 
+ * @param ship_map The map containing the user's ships.
+ * @param hit_map The map containing the user's hits/misses.
+*/
+void print_maps(char ship_map[MAP_SIZE][MAP_SIZE], char hit_map[MAP_SIZE][MAP_SIZE]){
+    // Print map labels
+    printf("\t\tOPPONENT MAP\t\t\t\t\t   YOUR MAP\n");
+    
+    // Print map top borders
+    for(int i = 0; i<MAP_SIZE+1; i++)
+        printf("+———");
+    
+    printf("+\t");
+
+    for(int i = 0; i<MAP_SIZE+1; i++)
+        printf("+———");
+    
+    printf("+\n");
+
+    
+    // Print map collumn headers.
+    printf("|   ");
+    
+    for(int i=0; i<MAP_SIZE; i++)
+        printf("| %c ", 'A'+i);
+    
+    printf("|\t|   ");
+
+    for(int i=0; i<MAP_SIZE; i++)
+        printf("| %c ", 'A'+i);
+    
+    printf("|\n");
+
+    // Print each row.
+    for(int y = 0; y<MAP_SIZE; y++){
+
+        // Boarders:
+        for(int i = 0; i<MAP_SIZE+1; i++)
+            printf("+———");
+
+        printf("+\t");
+
+        for(int i = 0; i<MAP_SIZE+1; i++)
+            printf("+———");
+
+        printf("+\n");
+
+        // First map
+        printf("|%2d ", y+1);
+
+        for(int x = 0; x<MAP_SIZE; x++)
+            printf("| %c ", hit_map[x][y]);
+
+        printf("|\t");
+
+        // Second map
+        printf("|%2d ", y+1);
+
+        for(int x = 0; x<MAP_SIZE; x++)
+            printf("| %c ", ship_map[x][y]);
+        
+        printf("|\n");
+    }
+
+    // Bottom boarders
+    for(int i = 0; i<MAP_SIZE+1; i++)
+        printf("+———");
+    
+    printf("+\t");
+
+    for(int i = 0; i<MAP_SIZE+1; i++)
+        printf("+———");
+    
+    printf("+\n");
+
+}
+
+/**
  * Prints the title
 */
 void print_title(){
@@ -234,4 +313,38 @@ int get_ship_selection(){
     }while(choice == -1);
 
     return choice;
+}
+
+/**
+ * Prints the appropriate message, for each hit responce.
+*/
+void print_hit_responce(char responce){
+
+    printf("\nOpponent: ");
+
+    if (responce == 'M'){
+            printf("MISS!!!\n");
+        }
+        else if(responce == 'H'){
+            printf("HIT!!!\n");
+        }
+        else if(responce == 'C'){
+            printf("SINK!!! You sunk their Carrier!\n");
+        }
+        else if(responce == 'B'){
+            printf("SINK!!! You sunk their Battleship!\n");
+        }
+        else if(responce == 'D'){
+            printf("SINK!!! You sunk their Destroyer!\n");
+        }
+        else if(responce == 'S'){
+            printf("SINK!!! You sunk their Submarine!\n");
+        }
+        else if(responce == 'P'){
+            printf("SINK!!! You sunk their Patrol Boat!\n");
+        }
+        else{
+            perror("Host: Incorrect responce");
+            exit(1);
+        }
 }

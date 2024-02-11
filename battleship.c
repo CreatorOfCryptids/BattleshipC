@@ -80,15 +80,56 @@ void rand_ship_coord(struct coord *coord, int *orientation, int ship_length){
     if (*orientation){  // Vertical
         if((coord->x = rand() % MAP_SIZE) < 0)
             coord->x = coord->x * -1;
-        if((coord->y = rand() % MAP_SIZE - CAR_SIZE) < 0)
+        if((coord->y = rand() % MAP_SIZE - ship_length) < 0)
             coord->y = coord->y * -1;
     }
     else{               // Horizontal
-        if((coord->x = rand() % MAP_SIZE - CAR_SIZE) < 0)
+        if((coord->x = rand() % MAP_SIZE - ship_length) < 0)
             coord->x = coord->x * - 1;
         if((coord->y = rand() % MAP_SIZE) < 0)
             coord->y = coord->y * - 1;
     }
+}
+
+/**
+ * Gets the users target coordinate, sends it to the opponent process, and prints the oppenent's responce.
+ * 
+ * @param op_map The map of coordinates that the player has already hit.
+ * @param input The pipe ID for messages going TO the host.
+ * @param output The pipe ID for messages going FROM the host.
+*/
+void get_user_target_sequence(char ship_map[MAP_SIZE][MAP_SIZE], char op_map[MAP_SIZE][MAP_SIZE], int input, int output){
+    struct coord target_coord;
+
+    while(1){
+        print_maps(ship_map, op_map);
+        printf("\n");
+
+        target_coord = read_coord();
+
+        printf("Would you like to hit "); print_coord(target_coord);printf(" (Y/n)?\n");
+        printf("Choice: ");
+
+        char selection = read_char();
+        if(selection == 'Y' || selection == 'y'){
+            break;
+        }
+
+        printf("Where would you like to aim?\n\n");
+    }
+
+    // Update op_map
+    
+
+    // Send coord
+    write(output, &target_coord, sizeof(struct coord));
+
+    // Print results
+    char target;
+    read(input, &target, sizeof(char));
+    print_hit_responce(target);
+
+    op_map[target_coord.x][target_coord.y] = target == 'M' ? 'X' : 'H';
 }
 
 /**
@@ -177,27 +218,47 @@ void singleplayer(int input, int output){
     }
 
     /* Test random map generation.
-    print_map(cpu_ships_map);
+    print_maps(cpu_hit_map, cpu_ships_map);
     exit(0);
     /**/
 
     int cpu_hits = 0;       // Amount of hits AGAINST the CPU
     int player_hits = 0;    // Amount of hits AGAINST the player
 
-    write(input, "R", 1);   // Send message to parent to let it continue.
+    write(input, "r", 1);   // Send message to parent to let it continue.
+    
     
     struct coord target_coord;
     struct coord last_hit;
+    char target;
+    read(output, &target, sizeof(char));
+
     while(cpu_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
         // Take in target coord since the user always goes first in single player
         read(output, &target_coord, sizeof(struct coord));
-        write(input, incoming_shot(cpu_ships_map, target_coord, ship_lengths, &cpu_hits), sizeof(char));        
+        target = incoming_shot(cpu_ships_map, target_coord, ship_lengths, &cpu_hits);
+
+        write(input, &target, sizeof(char));        
         
-        // Pipe random coordinates until a hit.
+        // Pipe random coordinates // TODO: until a hit...
+        while(1){
+            if((target_coord.x = rand() % MAP_SIZE) < 0)
+                target_coord.x = target_coord.x * -1;
+            if((target_coord.y = rand() % MAP_SIZE) < 0)
+                target_coord.y = target_coord.y * -1;
 
+            if(cpu_hit_map[target_coord.x][target_coord.y] == ' ')
+                break;
+        }
+        
+        write(input, &target_coord, sizeof(struct coord));
 
+        read(output, &target, sizeof(char));
+        if(target == 'M' || target == 'H')
+            cpu_hit_map[target_coord.x][target_coord.y] = target;
+        else
+            cpu_hit_map[target_coord.x][target_coord.y] = 'H';
     }
-    
 
     exit(0);
 }
@@ -205,17 +266,20 @@ void singleplayer(int input, int output){
 /**NOT YET IMPLEMENTED!
  * The code for the multiplayer opponent process that RECIVES information from a client.
  * 
- * @param inputs The pipe ID to send info TO the host Process FROM the child opponent process.
- * @param outpus The pipe ID to send info FROM the host process the TO child opponent process.
+ * @param input The pipe ID to send info TO the host Process FROM the child opponent process.
+ * @param output The pipe ID to send info FROM the host process the TO child opponent process.
 */
-void multiplayer_server(int inputs, int outputs){
+void multiplayer_server(int input, int output){
 
     // Networking bs
 
     printf("Waiting for connection...\n");
 
+    
+
     if (0){     // Wait for confirmed connection.
-        write(inputs, 'C', sizeof(char));   // Allow the main process to continue.
+        char confirm_code = 'C';
+        write(input, &confirm_code, sizeof(char));   // Allow the main process to continue.
     }
     
 
@@ -238,7 +302,8 @@ void multiplayer_client(int input, int output){
 
     // Networking bs
 
-    write(input, 'C', sizeof(char));   // Allow the main process to continue.
+    char confirm_code = 'C';
+    write(input, &confirm_code, sizeof(char));   // Allow the main process to continue.
 
     while(1){
 
@@ -250,13 +315,14 @@ void multiplayer_client(int input, int output){
 /**
  * Initializes the child process that handles the singleplayer process.
  * 
- * @param inputs The pipe IDs to send info TO the host Process FROM the child opponent process.
- * @param outpus The pipe IDs to send info FROM the host process the TO child opponent process.
+ * @param input The pipe IDs to send info TO the host Process FROM the child opponent process.
+ * @param output The pipe IDs to send info FROM the host process the TO child opponent process.
 */
-pid_t init_singleplayer(int inputs, int outputs){
+pid_t init_singleplayer(int input, int output){
+
     pid_t child;
     if ((child = fork()) == 0){
-        singleplayer(inputs, outputs);
+        singleplayer(input, output);
     }
     else if (child == -1){
         perror("There was an issue forking the singleplayer process");
@@ -322,8 +388,9 @@ int main(){
     do{ //Print menu and get selections.
         print_menu();
 
-        if ((choice = get_menu_selection()) == 1)    // If singleplayer, fork a process to play battlship with rand.
+        if ((choice = get_menu_selection()) == 1){   // If singleplayer, fork a process to play battlship with rand.
             oponent_process = init_singleplayer(inputs[1], outputs[0]);
+        }
         else if (choice == 2){    // If multiplayer, ask if the user wants to host or connect.
 
             print_networking_options();
@@ -337,11 +404,11 @@ int main(){
                 continue;
             }
 
-            char* output = 0;
+            char* confirmation = 0;
 
-            read(inputs[0], output, 1); // Waits until a message is sent by the child process, indicating that the connection has been made.
+            read(inputs[0], confirmation, 1); // Waits until a message is sent by the child process, indicating that the connection has been made.
 
-            if (*output == -1)          // Quit if we recive an error message.
+            if (*confirmation == -1)          // Quit if we recive an error message.
                 exit(1);
         }
         else if (choice == 3)
@@ -354,7 +421,7 @@ int main(){
         else if(choice == 6){
             printf("\t\tTESTING MODE\n");
 
-            //* Test read_coord()
+            /* Test read_coord()
             struct coord test;
             while(1){
                 test = read_coord();
@@ -371,17 +438,18 @@ int main(){
     char player_map[MAP_SIZE][MAP_SIZE];    // Map containing the player's ships
     char op_map[MAP_SIZE][MAP_SIZE];        // Map containing the player's attacks
 
-    int op_hits = 0;        // Amount of hits AGAINST the oponent
-    int player_hits = 0;    // Amount of hits AGAINST the player
-
     init_empty_map(player_map);
     init_empty_map(op_map);
+    
+    int op_hits = 0;        // Amount of hits AGAINST the oponent
+    int player_hits = 0;    // Amount of hits AGAINST the player
     
     // Generate player's map.
     int ship_lengths[5] = {CAR_SIZE, BAT_SIZE, DES_SIZE, SUB_SIZE, PAT_SIZE};
 
     int ship_tiles_placed = 0;
 
+    //*
     while(1){
         // Display the current map
         printf("\n");   // Formatting.
@@ -438,42 +506,90 @@ int main(){
 
         // If all the ships have been placed, ask if they are ready. If so, break.
         if(ship_tiles_placed == TOTAL_HITS){
-            printf("Are you happy with this map (Y/N)?\n\n");
+            printf("Are you happy with this map?\n\n");
             print_map(player_map);
+            printf("Choice (Y/n): ");
             char happy = read_char();
             if (happy == 'Y' || happy == 'y')
                 break;
             else 
                 continue;
         }
-    }
+    }/**/
 
-    //Tell other process that hoast is ready
+    //Tell other process that host is ready
     if(write(outputs[1], "R", 1) != 1){
         perror("HOST: Issue writng to output.");
         exit(1);
     }
 
-    printf("Waiting for opponent...\n");
+    printf("Waiting for opponent...\n\n");
 
     char responce;
     read(inputs[0], &responce, 1);
 
-    if (responce == 'R'){   // Capital R means that this user goes second.
+    printf("Your opponent is ready! ");
 
+    struct coord target_coord;
+    char target;
+
+    if (responce == 'R'){       // Capital R means that this user goes second.
+        printf("You go second.\n\n");
     }
-    else {
+    else if (responce == 'r'){  // This user goes first.
 
+        printf("You go first! Where would you like to aim?\n");
+        
+        get_user_target_sequence(player_map, op_map, inputs[0], outputs[1]);
+    }
+    else{
+        perror("HOST: recived incorrect init responce.");
+        exit(1);
     }
 
     // While both players have an unsunk battleship, let them hit back and forth.
-    struct coord target_coord;
-
     while(op_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
+        // Get opponent's target.
+        read(inputs[0], &target_coord, sizeof(struct coord));
+        target = incoming_shot(player_map, target_coord, ship_lengths, &player_hits);
+
+        // Respond to opponent.
+        write(outputs[1], &target, sizeof(char));
+
+        // Inform user.
+        printf("Opponent: ");print_coord(target_coord);printf("!!!\n\n");
+
+        //print_map(player_map);
+
+        if(target == 'C'){
+            printf("Your oponent sunk your Carrier!!!\n\n");
+        }
+        else if(target == 'B'){
+            printf("Your oponent sunk your Battleship!!!\n\n");
+        }
+        else if(target == 'D'){
+            printf("Your oponent sunk your Destroyer!!!\n\n");
+        }
+        else if(target == 'S'){
+            printf("Your oponent sunk your Submarine!!!\n\n");
+        }
+        else if(target == 'P'){
+            printf("Your oponent sunk your Patrol Boat!!!\n\n");
+        }
         
+        // Take in user's target coord.
+        //printf("Where would you like to aim next?\n\n");
+        get_user_target_sequence(player_map, op_map, inputs[0], outputs[1]);
     }
 
     kill(oponent_process, SIGKILL);
+
+    if(player_hits == TOTAL_HITS){
+        printf("Sorry, you lose :(\n Better luck next time!");
+    }
+    else{
+        printf("YOU WIN!!!!\n");
+    }
 
     return 0;
 }
