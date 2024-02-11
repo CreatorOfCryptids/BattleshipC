@@ -98,7 +98,7 @@ void rand_ship_coord(struct coord *coord, int *orientation, int ship_length){
  * @param input The pipe ID for messages going TO the host.
  * @param output The pipe ID for messages going FROM the host.
 */
-void get_user_target_sequence(char ship_map[MAP_SIZE][MAP_SIZE], char op_map[MAP_SIZE][MAP_SIZE], int input, int output){
+void get_user_target_sequence(char ship_map[MAP_SIZE][MAP_SIZE], char op_map[MAP_SIZE][MAP_SIZE], int input, int output, int *op_hits){
     struct coord target_coord;
 
     while(1){
@@ -107,15 +107,12 @@ void get_user_target_sequence(char ship_map[MAP_SIZE][MAP_SIZE], char op_map[MAP
 
         target_coord = read_coord();
 
-        printf("Would you like to hit "); print_coord(target_coord);printf(" (Y/n)?\n");
-        printf("Choice: ");
-
-        char selection = read_char();
-        if(selection == 'Y' || selection == 'y'){
+        if(op_map[target_coord.x][target_coord.y] != ' '){
+            printf("\nYou have already hit that coordinate, please select another.\n\n");
+        }
+        else{
             break;
         }
-
-        printf("Where would you like to aim?\n\n");
     }
 
     // Update op_map
@@ -130,6 +127,9 @@ void get_user_target_sequence(char ship_map[MAP_SIZE][MAP_SIZE], char op_map[MAP
     print_hit_responce(target);
 
     op_map[target_coord.x][target_coord.y] = target == 'M' ? 'X' : 'H';
+
+    if(target != 'M')
+        *op_hits--;
 }
 
 /**
@@ -540,7 +540,7 @@ int main(){
 
         printf("You go first! Where would you like to aim?\n");
         
-        get_user_target_sequence(player_map, op_map, inputs[0], outputs[1]);
+        get_user_target_sequence(player_map, op_map, inputs[0], outputs[1], &op_hits);
     }
     else{
         perror("HOST: recived incorrect init responce.");
@@ -579,7 +579,7 @@ int main(){
         
         // Take in user's target coord.
         //printf("Where would you like to aim next?\n\n");
-        get_user_target_sequence(player_map, op_map, inputs[0], outputs[1]);
+        get_user_target_sequence(player_map, op_map, inputs[0], outputs[1], &op_hits);
     }
 
     kill(oponent_process, SIGKILL);
