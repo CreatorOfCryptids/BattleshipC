@@ -129,7 +129,7 @@ void get_user_target_sequence(char ship_map[MAP_SIZE][MAP_SIZE], char op_map[MAP
     op_map[target_coord.x][target_coord.y] = target == 'M' ? 'X' : 'H';
 
     if(target != 'M')
-        *op_hits--;
+        op_hits--;
 }
 
 /**
@@ -449,7 +449,7 @@ int main(){
 
     int ship_tiles_placed = 0;
 
-    //*
+    //* Skip inputing ship map to skip to interface
     while(1){
         // Display the current map
         printf("\n");   // Formatting.
@@ -548,7 +548,7 @@ int main(){
     }
 
     // While both players have an unsunk battleship, let them hit back and forth.
-    while(op_hits < TOTAL_HITS && player_hits < TOTAL_HITS){
+    while(op_hits < TOTAL_HITS-1 && player_hits < TOTAL_HITS-1){
         // Get opponent's target.
         read(inputs[0], &target_coord, sizeof(struct coord));
         target = incoming_shot(player_map, target_coord, ship_lengths, &player_hits);

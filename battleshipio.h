@@ -6,6 +6,10 @@
 #include <string.h>
 #include "constants.h"
 
+#define HIT "\x1b[31m"
+#define SHIP "\x1b[32m"
+#define COLOR_RESET "\x1b[0m"
+
 char buff[256];
 
 /**
@@ -66,7 +70,9 @@ void print_map(char map[MAP_SIZE][MAP_SIZE]){
         printf("|%2d ", y+1);
 
         for(int x = 0; x<MAP_SIZE; x++)
-            printf("| %c ", map[x][y]);
+            if (map[x][y] != 'X'){
+                printf("|" SHIP " %c " COLOR_RESET, map[x][y]);
+            }
 
         printf("|\n");
     }
@@ -130,15 +136,28 @@ void print_maps(char ship_map[MAP_SIZE][MAP_SIZE], char hit_map[MAP_SIZE][MAP_SI
         printf("|%2d ", y+1);
 
         for(int x = 0; x<MAP_SIZE; x++)
-            printf("| %c ", hit_map[x][y]);
-
+            if(hit_map[x][y] == 'H'){
+                printf("|" HIT " %c " COLOR_RESET, hit_map[x][y]);
+            }
+            else{
+                printf("| %c ", hit_map[x][y]);
+            }
+            
         printf("|\t");
 
         // Second map
         printf("|%2d ", y+1);
 
         for(int x = 0; x<MAP_SIZE; x++)
-            printf("| %c ", ship_map[x][y]);
+            if(ship_map[x][y] == 'H'){
+                printf("|" HIT " %c " COLOR_RESET, ship_map[x][y]);
+            }
+            else if (ship_map[x][y] != 'X'){
+                printf("|" SHIP " %c " COLOR_RESET, ship_map[x][y]);
+            }
+            else{
+                printf("| %c ", ship_map[x][y]);
+            }
         
         printf("|\n");
     }
