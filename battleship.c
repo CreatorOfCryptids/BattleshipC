@@ -28,7 +28,7 @@ void init_empty_map(char map[MAP_SIZE][MAP_SIZE]){
  * @param orientation The orientation of the ship, with 1 being vertical and 0 being horizontal
  * @param ship_symbol The type of ship being added
  * @return -1 for a collision, 0 if the ship can be added, and 1 if the ship goes off the edge of the map.
-*/
+ */
 int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation, int length, char ship_symbol){
     
     //printf("DEBUG PLACE_SHIP: X: %d Y: %d\n", coord.x, coord.y);
@@ -66,38 +66,12 @@ int place_ship(char map[MAP_SIZE][MAP_SIZE], struct coord coord, int orientation
 }
 
 /**
- * Generates random coordinates for the start of a ship, and it's orientation. 
- * Will not return a value that puts the ship off the edge of the map.
- * 
- * @param coord A pointer to the coordinate for generation.
- * @param orientation A pointer to the orientation of the ship (with 1 being vertical and 0 being horizontal)
- * @param ship_length The length of the ship.
-*/
-void rand_ship_coord(struct coord *coord, int *orientation, int ship_length){
-
-    *orientation = rand() % 2; // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
-
-    if (*orientation){  // Vertical
-        if((coord->x = rand() % MAP_SIZE) < 0)
-            coord->x = coord->x * -1;
-        if((coord->y = rand() % MAP_SIZE - ship_length) < 0)
-            coord->y = coord->y * -1;
-    }
-    else{               // Horizontal
-        if((coord->x = rand() % MAP_SIZE - ship_length) < 0)
-            coord->x = coord->x * - 1;
-        if((coord->y = rand() % MAP_SIZE) < 0)
-            coord->y = coord->y * - 1;
-    }
-}
-
-/**
  * Gets the users target coordinate, sends it to the opponent process, and prints the oppenent's responce.
  * 
  * @param op_map The map of coordinates that the player has already hit.
  * @param input The pipe ID for messages going TO the host.
  * @param output The pipe ID for messages going FROM the host.
-*/
+ */
 void get_user_target_sequence(char ship_map[MAP_SIZE][MAP_SIZE], char op_map[MAP_SIZE][MAP_SIZE], int input, int output, int *op_hits){
     struct coord target_coord;
 
@@ -140,7 +114,7 @@ void get_user_target_sequence(char ship_map[MAP_SIZE][MAP_SIZE], char op_map[MAP
  * @param ship_lengths The remaining lengths of the ships in the host's map.
  * @param hits A pointer to the host's remaining ship health.
  * @return A char representing a Hit, Miss, or Sink. Returns the ship symbol of the sunken ship, when a ship is sunk.
-*/
+ */
 char incoming_shot(char ship_map[MAP_SIZE][MAP_SIZE], struct coord target_coord, int ship_lengths[SHIP_COUNT], int *hits){
 
     char target = ship_map[target_coord.x][target_coord.y]; // What was stored in the ship_map at the target coord
@@ -188,7 +162,7 @@ char incoming_shot(char ship_map[MAP_SIZE][MAP_SIZE], struct coord target_coord,
  * 
  * @param input The pipe ID to send info TO the host process FROM the child opponent process.
  * @param output The pipe ID to send info FROM the host process the TO child opponent process.
-*/
+ */
 void singleplayer(int input, int output){
     
     char cpu_ships_map[MAP_SIZE][MAP_SIZE]; // Map containing CPU's ships
@@ -199,26 +173,33 @@ void singleplayer(int input, int output){
     
     // Generate CPU's map.
 
-    // place carrier
+    
     struct coord coord;
     int orientation;
 
     srand(time(NULL));
-    rand_ship_coord(&coord, &orientation, CAR_SIZE);
-    //printf("CAR: x: %d, y: %d, Orientation: %d\n", x, y, orientation);
-    place_ship(cpu_ships_map, coord, orientation, CAR_SIZE, 'C'); 
+    int ship_lengths[SHIP_COUNT] = {CAR_SIZE, BAT_SIZE, DES_SIZE, SUB_SIZE, PAT_SIZE};
 
-    int ship_lengths[5] = {CAR_SIZE, BAT_SIZE, DES_SIZE, SUB_SIZE, PAT_SIZE};
-
-    for(int i=1;i<5;i++){ // Skip first entry becuase already placed Carrier.
+    for(int i=0;i<SHIP_COUNT;i++){ // Skip first entry becuase already placed Carrier.
         do{
-            rand_ship_coord(&coord, &orientation, ship_lengths[i]);
+            if ((orientation = rand() % 2) == 1){  // Vertical
+                if((coord.x = rand() % MAP_SIZE) < 0)
+                    coord.x = coord.x * -1;
+                if((coord.y = rand() % MAP_SIZE - ship_lengths[i]) < 0)
+                    coord.y = coord.y * -1;
+            }
+            else{                                   // Horizontal
+                if((coord.x = rand() % MAP_SIZE - ship_lengths[i]) < 0)
+                    coord.x = coord.x * - 1;
+                if((coord.y = rand() % MAP_SIZE) < 0)
+                    coord.y = coord.y * - 1;
+            }
         }
         while(place_ship(cpu_ships_map, coord, orientation, ship_lengths[i], ship_symbols[i]) == -1);
     }
 
     /* Test random map generation.
-    print_maps(cpu_hit_map, cpu_ships_map);
+    print_map(cpu_ships_map);
     exit(0);
     /**/
 
@@ -226,7 +207,6 @@ void singleplayer(int input, int output){
     int player_hits = 0;    // Amount of hits AGAINST the player
 
     write(input, "r", 1);   // Send message to parent to let it continue.
-    
     
     struct coord target_coord;
     struct coord last_hit;
@@ -256,8 +236,10 @@ void singleplayer(int input, int output){
         read(output, &target, sizeof(char));
         if(target == 'M' || target == 'H')
             cpu_hit_map[target_coord.x][target_coord.y] = target;
-        else
+        else{
             cpu_hit_map[target_coord.x][target_coord.y] = 'H';
+            last_hit = target_coord;
+        }
     }
 
     exit(0);
@@ -268,7 +250,7 @@ void singleplayer(int input, int output){
  * 
  * @param input The pipe ID to send info TO the host Process FROM the child opponent process.
  * @param output The pipe ID to send info FROM the host process the TO child opponent process.
-*/
+ */
 void multiplayer_server(int input, int output){
 
     // Networking bs
@@ -297,7 +279,7 @@ void multiplayer_server(int input, int output){
  * 
  * @param input The pipe IDs to send info TO the host Process FROM the child opponent process.
  * @param output The pipe IDs to send info FROM the host process the TO child opponent process.
-*/
+ */
 void multiplayer_client(int input, int output){
 
     // Networking bs
@@ -313,56 +295,8 @@ void multiplayer_client(int input, int output){
 }
 
 /**
- * Initializes the child process that handles the singleplayer process.
- * 
- * @param input The pipe IDs to send info TO the host Process FROM the child opponent process.
- * @param output The pipe IDs to send info FROM the host process the TO child opponent process.
-*/
-pid_t init_singleplayer(int input, int output){
-
-    pid_t child;
-    if ((child = fork()) == 0){
-        singleplayer(input, output);
-    }
-    else if (child == -1){
-        perror("There was an issue forking the singleplayer process");
-        exit(1);
-    }
-    return child;
-}
-
-/**
- * Initializes the child process that handles the multiplayer process.
- * 
- * @param input The pipe IDs to send info TO the host Process FROM the child opponent process.
- * @param output The pipe IDs to send info FROM the host process the TO child opponent process.
- * @param connection_choice The user's decition to host (1) or connect (0);
-*/
-pid_t init_multiplayer(int input, int output, char connection_choice){
-    pid_t child;
-    if ((child = fork()) == 0){
-        if (connection_choice)
-            multiplayer_server(input, output);
-        else 
-            multiplayer_client(input, output);
-        exit(1);
-    }
-    else if (child == -1){
-        perror("There was an issue forking the multiplayer process");
-        exit(1);
-    }
-    else{
-        char confirmation;
-
-        read(input, &confirmation, sizeof(char));
-
-        return child;
-    }
-}
-
-/**
  * Main function.
-*/
+ */
 int main(){
 
     int inputs[2];      // Information coming FROM the chosen oponent
@@ -389,27 +323,45 @@ int main(){
         print_menu();
 
         if ((choice = get_menu_selection()) == 1){   // If singleplayer, fork a process to play battlship with rand.
-            oponent_process = init_singleplayer(inputs[1], outputs[0]);
+            //oponent_process = init_singleplayer(inputs[1], outputs[0]);
+            if ((oponent_process = fork()) == 0){
+                singleplayer(inputs[1], outputs[0]);
+            }
+            else if (oponent_process == -1){
+                perror("There was an issue forking the singleplayer process");
+                return 1;
+            }
         }
         else if (choice == 2){    // If multiplayer, ask if the user wants to host or connect.
 
             print_networking_options();
 
-            if ((choice = get_menu_selection()) == 1)   // User wants to host
-                oponent_process = init_multiplayer(inputs[1], outputs[0], 0);
-            else if(choice == 2)                    // User wants to connect.
-                oponent_process = init_multiplayer( inputs[1], outputs[0], 1);
+            if ((choice = get_menu_selection()) == 1){   // User wants to host
+                if ((oponent_process = fork()) == 0){
+                    multiplayer_server(inputs[1], outputs[0]);
+                }
+                else if (oponent_process == -1){
+                    perror("There was an issue forking the multiplayer process");
+                    return 1;
+                }
+            }
+            else if(choice == 2){                // User wants to connect.
+                if ((oponent_process = fork()) == 0){
+                    multiplayer_client(inputs[1], outputs[0]);
+                }
+                else if (oponent_process == -1){
+                    perror("There was an issue forking the multiplayer process");
+                    return 1;
+                }
+            }
             else{                                    // Other
                 choice = 0; // Set to 0, so the while loop keeps working.
                 continue;
             }
 
-            char* confirmation = 0;
+            char confirmation;
 
-            read(inputs[0], confirmation, 1); // Waits until a message is sent by the child process, indicating that the connection has been made.
-
-            if (*confirmation == -1)          // Quit if we recive an error message.
-                exit(1);
+            read(inputs[0], &confirmation, sizeof(char));// Waits until a message is sent by the child process, indicating that the connection has been made.
         }
         else if (choice == 3)
             print_settings_menu();
@@ -583,6 +535,8 @@ int main(){
     }
 
     kill(oponent_process, SIGKILL);
+    close(inputs[1]);
+    close(outputs[1]);
 
     if(player_hits == TOTAL_HITS){
         printf("Sorry, you lose :(\n Better luck next time!");
@@ -593,3 +547,78 @@ int main(){
 
     return 0;
 }
+
+// Outdated methods:
+/** rand_ship_coord() OUTDATED!!!
+ * Generates random coordinates for the start of a ship, and it's orientation. 
+ * Will not return a value that puts the ship off the edge of the map.
+ * 
+ * @param coord A pointer to the coordinate for generation.
+ * @param orientation A pointer to the orientation of the ship (with 1 being vertical and 0 being horizontal)
+ * @param ship_length The length of the ship.
+ *
+void rand_ship_coord(struct coord *coord, int *orientation, int ship_length){
+
+    *orientation = rand() % 2; // Get a random 1 or 0 to see if the ship is vertical (1) or horizontal (0)
+
+    if (*orientation){  // Vertical
+        if((coord->x = rand() % MAP_SIZE) < 0)
+            coord->x = coord->x * -1;
+        if((coord->y = rand() % MAP_SIZE - ship_length) < 0)
+            coord->y = coord->y * -1;
+    }
+    else{               // Horizontal
+        if((coord->x = rand() % MAP_SIZE - ship_length) < 0)
+            coord->x = coord->x * - 1;
+        if((coord->y = rand() % MAP_SIZE) < 0)
+            coord->y = coord->y * - 1;
+    }
+}*/
+
+/** init_singleplayer() OUTDATED!!!
+ * OUTDATED!!! Initializes the child process that handles the singleplayer process.
+ * 
+ * @param input The pipe IDs to send info TO the host Process FROM the child opponent process.
+ * @param output The pipe IDs to send info FROM the host process the TO child opponent process.
+*
+pid_t init_singleplayer(int input, int output){
+
+    pid_t child;
+    if ((child = fork()) == 0){
+        singleplayer(input, output);
+    }
+    else if (child == -1){
+        perror("There was an issue forking the singleplayer process");
+        exit(1);
+    }
+    return child;
+}*/
+
+/** init_multiplayer() OUTDATED!!!
+ * Initializes the child process that handles the multiplayer process.
+ * 
+ * @param input The pipe IDs to send info TO the host Process FROM the child opponent process.
+ * @param output The pipe IDs to send info FROM the host process the TO child opponent process.
+ * @param connection_choice The user's decition to host (1) or connect (0);
+*
+pid_t init_multiplayer(int input, int output, char connection_choice){
+    pid_t child;
+    if ((child = fork()) == 0){
+        if (connection_choice)
+            multiplayer_server(input, output);
+        else 
+            multiplayer_client(input, output);
+        exit(1);
+    }
+    else if (child == -1){
+        perror("There was an issue forking the multiplayer process");
+        exit(1);
+    }
+    else{
+        char confirmation;
+
+        read(input, &confirmation, sizeof(char));
+
+        return child;
+    }
+}*/
