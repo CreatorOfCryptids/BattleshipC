@@ -549,6 +549,7 @@ int main(){
 }
 
 // Outdated methods:
+
 /** rand_ship_coord() OUTDATED!!!
  * Generates random coordinates for the start of a ship, and it's orientation. 
  * Will not return a value that puts the ship off the edge of the map.
