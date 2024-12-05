@@ -7,7 +7,8 @@
 #define TOTAL_HITS (CAR_SIZE + BAT_SIZE + DES_SIZE + SUB_SIZE + PAT_SIZE)
 #define SHIP_COUNT 5
 
-struct coord{
-    int x;    
+struct coord
+{
+    int x;
     int y;
 };
